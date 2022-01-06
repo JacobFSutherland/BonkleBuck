@@ -312,6 +312,7 @@ export class MainController{
             reciever: initiatorID,
             medium: optionMedium
         }
+        
         let bonkleBuckMedium: BonkleBuck = {
             type: 'BonkleBuck',
             ammount: totalCost+STOCK_TRANSACTION_FEE
