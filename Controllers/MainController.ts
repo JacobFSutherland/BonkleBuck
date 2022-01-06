@@ -445,7 +445,7 @@ export class MainController{
                 }
 
                 if(msg === '!supply'){
-                    message.channel.send(`There are ${-this.AssetController.getBonkleBalance('BLOCK_REWARD')} Bonkle Bucks distributed in rewards\n\nThere are ${-this.AssetController.getBonkleBalance('COCKSINO')} Bonkle Bucks generated from the Cock-sino\n\nThere are ${-this.AssetController.getBonkleBalance('BonkleBuckBanker')} Bonkle Bucks generated from the markets, item and sales\n\nThe circulating supply of Bonkle Bucks is ${-this.AssetController.getBonkleBalance('BLOCK_REWARD')-this.AssetController.getBonkleBalance('COCKSINO')-this.AssetController.getBonkleBalance('BonkleBuckBanker')}`);
+                    message.channel.send(`There are ${-this.AssetController.getBonkleBalance('BLOCK_REWARD')} Bonkle Bucks distributed in rewards\n\nThere are ${-this.AssetController.getBonkleBalance('COCKSINO')} Bonkle Bucks generated from the Cock-sino\n\nThere are ${-this.AssetController.getBonkleBalance('BonkleBuckBanker')} Bonkle Bucks generated from the markets and item sales\n\nThe circulating supply of Bonkle Bucks is ${-this.AssetController.getBonkleBalance('BLOCK_REWARD')-this.AssetController.getBonkleBalance('COCKSINO')-this.AssetController.getBonkleBalance('BonkleBuckBanker')}`);
                 }
 
                 if(msg === '!help'){
