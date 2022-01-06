@@ -40,3 +40,8 @@ export interface Mute {
     target: string
     sex: number
 }
+
+export interface Trade {
+    sender: Transaction,
+    reciever: Transaction,
+}
