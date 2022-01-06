@@ -414,6 +414,7 @@ export class MainController{
         this.BlockController.addTransactionToBlock(bonkleBuckTransaction);
     }
 
+    
     buyOption(msg: string[], initiatorID: string, totalCost: number) {
         
         let optionMedium: Option = {
