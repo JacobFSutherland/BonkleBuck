@@ -1,0 +1,254 @@
+import { COCK_SERVER_CHANNEL_ID, SEXY_BONKLES_GUILD_ID, TRADING_COMMISSION } from "../env"
+import { BonkleBuck, Option, OptionMap, OptionValue, Stock, Trade, Transaction } from "../models"
+import { Message, MessageEmbed } from 'discord.js'
+
+export class AssetController {
+    private currentBalances: {[id: string] : number}
+    private currentNFTs: {[id: string] : string[]}
+    private currentStocks: {[id: string] : {[ticker: string]: number}}
+    private currentOptions: {[id: string]: {[ticker: string]: {[strike: number]: OptionValue}}}
+    constructor(){
+        this.currentBalances = {};
+        this.currentNFTs = {};
+        this.currentStocks = {};
+        this.currentOptions = {};
+    }
+    
+    withdrawReward(b: number){
+        this.currentBalances['BLOCK_REWARD'] -= b;
+    }
+
+    syncNetwork(blocks: Message<boolean>[], fullSync: boolean): Transaction[] {
+        let ordersToFulfill: Transaction[] = [];
+        blocks.forEach(block => {
+            let blockTransactions = block.embeds[0].fields;
+            for(let i = 2; i < blockTransactions.length; i++){
+                let t = JSON.parse(blockTransactions[i].value.slice(1, blockTransactions[i].value.length-1)) as Transaction;
+                if(this.syncTransaction(t, fullSync)) ordersToFulfill.push(t);
+            }
+        })
+        return ordersToFulfill;
+    }
+
+    syncTransaction(t: Transaction, fullSync: boolean): Transaction | undefined{
+        if(t.medium.type === 'BonkleBuck'){
+            this.currentBalances[t.reciever] = (this.currentBalances[t.reciever]) ? this.currentBalances[t.reciever] += t.medium.ammount : t.medium.ammount;
+            if(fullSync) this.currentBalances[t.sender] = (this.currentBalances[t.sender])? this.currentBalances[t.sender]-=t.medium.ammount : -t.medium.ammount;
+        }else if(t.medium.type === 'Stock'){
+            if(!this.currentStocks[t.reciever]){
+                this.currentStocks[t.reciever] = {};
+                this.currentStocks[t.reciever][t.medium.ticker] = 0;
+            }
+            this.currentStocks[t.reciever][t.medium.ticker] += t.medium.ammount;
+
+            if(fullSync) {
+                if(!this.currentStocks[t.sender]){
+                    this.currentStocks[t.sender] = {};
+                    this.currentStocks[t.sender][t.medium.ticker] = 0;
+                }
+                this.currentStocks[t.sender][t.medium.ticker] -= t.medium.ammount;
+            }
+        }else if(t.medium.type === 'DiscordInvite' || t.medium.type === 'Mute'){
+            if(fullSync) return;
+            return t;
+
+        }else if(t.medium.type === 'Option'){
+            if(!this.currentOptions[t.reciever]){
+                this.currentOptions[t.reciever] = {};
+                this.currentOptions[t.reciever][t.medium.ticker] = [];
+                this.currentOptions[t.reciever][t.medium.ticker][t.medium.strike] = {Calls: 0, Puts: 0};
+            }
+            this.currentOptions[t.reciever][t.medium.ticker][t.medium.strike][t.medium.option] += t.medium.contracts;
+
+            if(fullSync) {
+                if(!this.currentStocks[t.sender]){
+                    this.currentOptions[t.sender] = {};
+                    this.currentOptions[t.sender][t.medium.ticker] = [];
+                    this.currentOptions[t.sender][t.medium.ticker][t.medium.strike] = {Calls: 0, Puts: 0};
+                }
+                this.currentOptions[t.sender][t.medium.ticker][t.medium.strike][t.medium.option] -= t.medium.contracts;
+            }
+        }
+
+    }
+
+    verifyEnoughBonkle(discordID: string, bucks: string): Boolean {
+        if(!this.currentBalances[discordID]){
+            this.currentBalances[discordID] = 0;
+        }
+        if(Number(bucks) && Number(bucks) > 0 ){
+            this.currentBalances[discordID] -= Number(bucks);
+            if(this.currentBalances[discordID] >= 0){
+                return true; 
+            }
+            this.currentBalances[discordID] += Number(bucks);
+        }
+        return false;
+    }
+
+    returnFrozenAssets(discordID: string, bucks: string): void {
+        this.currentBalances[discordID] += Number(bucks);
+    }
+
+    /*
+        Verification Functions
+    */
+    
+    verifyBuyStock(discordID: string, ticker: string, stockPrice: number, quantity: string): Boolean {
+        if(!Number(quantity)) return false;
+        let totalCost = (Number(quantity) * stockPrice + TRADING_COMMISSION) + '';
+        return this.verifyEnoughBonkle(discordID, totalCost);
+    }
+
+    verifySellStock(discordID: string, ticker: string, stockPrice: number, quantity: string): Boolean {
+        if(!this.currentStocks[discordID][ticker]){
+            this.currentStocks[discordID][ticker] = 0;
+            return false;
+        }
+        if(!Number(quantity)) return false;
+        this.currentStocks[discordID][ticker] -= Number(quantity)
+        if(this.currentStocks[discordID][ticker] < 0){
+            this.currentStocks[discordID][ticker] += Number(quantity)
+            return false;
+        } 
+
+        let totalCost = Number(quantity) * stockPrice - TRADING_COMMISSION;
+        return (totalCost > 0);
+    }
+
+    verifyBuyOption(discordID: string, optionChain: OptionMap, input: string[]): Boolean {
+        let type: 'Calls' | 'Puts' | undefined = (input[2].indexOf('call') != -1)? 
+            'Calls': (input[2].indexOf('put') != -1)? 
+            'Puts': undefined;
+        if(type === undefined || !Number(input[4]) || optionChain.isEmpty() ||
+            !Number(input[3]) || Number(input[4]) > 0 ||
+            Number(input[4]) != Math.floor(Number(input[4]))) return false;
+
+        let contracts = Number(input[4]);
+        let strike = Number(input[3]);
+        let optionPrice = optionChain[type][strike].ask;
+        if(!Number(contracts) && optionPrice <= 0) return false;
+        let totalCost = (optionPrice * Number(contracts) * 100 + TRADING_COMMISSION) + '';
+        return this.verifyEnoughBonkle(discordID, totalCost);
+    }
+
+    verifySellOption(discordID: string, optionChain: OptionMap, input: string[]): Boolean {
+        let type: 'Calls' | 'Puts' | undefined = (input[2].indexOf('call') != -1)? 
+        'Calls': (input[2].indexOf('put') != -1)? 
+        'Puts': undefined;
+        if(type === undefined || !Number(input[4]) || optionChain.isEmpty() ||
+            !Number(input[3]) || Number(input[4]) > 0 ||
+            Number(input[4]) != Math.floor(Number(input[4]))) return false;
+
+        let contracts = Number(input[4]);
+        let strike = Number(input[3]);
+        let optionPrice = optionChain[type][strike].ask;
+        if(!Number(contracts) && optionPrice <= 0) return false;
+        let totalCost = (optionPrice * Number(contracts) * 100 - TRADING_COMMISSION);
+        return (totalCost > 0);
+        
+    }
+
+    /*
+        End of Verification Functions
+    */
+
+    tradeStock(buyer: string, seller: string, ticker: string, stockPrice: number, quantity: string): Trade {
+        let stockMedium: Stock = {
+            ticker: `$${ticker}`,
+            type: 'Stock',
+            ammount: Number(quantity)
+        }
+        let stockTransaction: Transaction = {
+            sender: seller,
+            reciever: buyer,
+            medium: stockMedium
+        }
+        let bonkleBuckMedium: BonkleBuck = {
+            type: 'BonkleBuck',
+            ammount: Number(quantity)*stockPrice + (Number(buyer))? TRADING_COMMISSION: -TRADING_COMMISSION
+        }
+        let bonkleBuckTransaction: Transaction = {
+            sender: buyer,
+            reciever: seller,
+            medium: bonkleBuckMedium
+        }
+        let t: Trade = {
+            sender: bonkleBuckTransaction,
+            reciever: stockTransaction,
+        }
+        return t;
+    }
+    
+    /*
+    Start of Trades
+    */
+
+    tradeOption(buyer: string, seller: string, optionChain: OptionMap, input: string[]): Trade {
+        let option: 'Calls' | 'Puts' = (input[2].indexOf('call') != -1)? 
+        'Calls': 'Puts'
+        let ticker = input[1].replace('$', '');
+        let contracts = Number(input[4]);
+        let strike = Number(input[3]);
+        let optionPrice = optionChain[option][strike].ask;
+        let optionMedium: Option = {
+            ticker: `$${ticker}`,
+            type: 'Option',
+            option,
+            strike: strike,
+            contracts,
+            expiration: 0,
+        }
+        let bonkleBuckMedium: BonkleBuck = {
+            type: 'BonkleBuck',
+            ammount: optionPrice*100*Number(contracts) + (Number(buyer))? TRADING_COMMISSION: -TRADING_COMMISSION
+        }
+
+        let optionTransaction: Transaction = {
+            reciever: buyer,
+            sender: seller,
+            medium: optionMedium
+        }
+
+        let bonkleBuckTransaction: Transaction = {
+            reciever: seller,
+            sender: buyer,
+            medium: bonkleBuckMedium
+        }
+        let t: Trade = {
+            sender: bonkleBuckTransaction,
+            reciever: optionTransaction,
+        }
+        return t;
+    }
+
+    /*
+    End of Trades
+    */
+
+
+    getStockPortfolioEmbed(id: string): MessageEmbed {
+        let embed = new MessageEmbed()
+            .setTitle('Portfolio')
+        if(!this.currentStocks[id]) this.currentStocks[id] = {};
+        let keys = Object.keys(this.currentStocks[id]);
+        for(let i = 0; i < keys.length; i++){
+            embed.addField(keys[i], this.currentStocks[id][keys[i]] + '', true)
+        }
+        if(keys.length == 0) embed.setDescription('Litterally nothing');
+        return embed
+    }
+
+    getBonkleBalance(id: string): number {
+        if(this.currentBalances[id]){
+            return this.currentBalances[id];
+        }
+        this.currentBalances[id] = 0;
+        return 0;
+    }
+
+    getEconParticipants(): string[] {
+        return Object.keys(this.currentBalances);
+    }
+    
+}
