@@ -64,6 +64,7 @@ export class MainController{
                 if(msg[0] === '!flip'){
                     if(msg[1]){
                         if(this.AssetController.verifyEnoughBonkle(message.author.id, msg[1])){
+                            console.log('Flipping');
                             let medium: BonkleBuck = {type: 'BonkleBuck', ammount: Number(msg[1])}; // Wagered Ammount
                             if(Math.random() >= 0.5){
                                 message.channel.send(`Unfortunate outcome! you gained ${msg[1]} Bonkle Bucks in the next block`);
@@ -81,6 +82,7 @@ export class MainController{
                                     medium,
                                     sender: message.author.id
                                 }
+                                message.channel.send(`Congradulations! you lost ${msg[1]} Bonkle Bucks in the next block`);
                                 this.BlockController.addTransactionToBlock(t);
                                 if(Math.random() < 0.01){
                                     message.channel.send(`Congradulations! you also got kicked`);
@@ -312,7 +314,7 @@ export class MainController{
             reciever: initiatorID,
             medium: optionMedium
         }
-        
+
         let bonkleBuckMedium: BonkleBuck = {
             type: 'BonkleBuck',
             ammount: totalCost+STOCK_TRANSACTION_FEE
