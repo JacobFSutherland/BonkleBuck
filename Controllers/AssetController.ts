@@ -154,6 +154,10 @@ export class AssetController {
     */
 
     tradeStock(buyer: string, seller: string, ticker: string, stockPrice: number, quantity: string): Trade {
+        let stockCost = Number(quantity)*stockPrice;
+        let commission = (Number(buyer))? TRADING_COMMISSION: -TRADING_COMMISSION;
+        console.log(stockCost);
+        console.log(commission);
         let stockMedium: Stock = {
             ticker: `$${ticker}`,
             type: 'Stock',
@@ -166,7 +170,7 @@ export class AssetController {
         }
         let bonkleBuckMedium: BonkleBuck = {
             type: 'BonkleBuck',
-            ammount: Number(quantity)*stockPrice + (Number(buyer))? TRADING_COMMISSION: -TRADING_COMMISSION
+            ammount: stockCost + commission,
         }
         let bonkleBuckTransaction: Transaction = {
             sender: buyer,
