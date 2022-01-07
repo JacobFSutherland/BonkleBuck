@@ -195,6 +195,7 @@ export class AssetController {
         let contracts = Number(input[4]);
         let strike = Number(input[3]);
         let optionPrice = optionChain[option][strike].ask;
+        let comission = (Number(buyer))? TRADING_COMMISSION: -TRADING_COMMISSION;
         let optionMedium: Option = {
             ticker: `$${ticker}`,
             type: 'Option',
@@ -205,7 +206,7 @@ export class AssetController {
         }
         let bonkleBuckMedium: BonkleBuck = {
             type: 'BonkleBuck',
-            ammount: optionPrice*100*Number(contracts) + (Number(buyer))? TRADING_COMMISSION: -TRADING_COMMISSION
+            ammount: optionPrice*100*Number(contracts) + comission,
         }
 
         let optionTransaction: Transaction = {
