@@ -113,7 +113,7 @@ function createQuestion(): Solution {
         let symbol = ARITHMATIC_SYMBOLS[randomIntFromInterval(0, LARGEST_NUMBER)%ARITHMATIC_SYMBOLS.length];
         mathProblem += `${numberToBeComputed} ${symbol} `
         if(Math.random() > 0.5){
-            writtenProblem += `${toWords(numberToBeComputed)} ${symbol} `
+            writtenProblem += `${toWords(numberToBeComputed).replace(/l/g, 'I')} ${symbol} `
         }else{
             writtenProblem += `${numberToBeComputed} ${symbol} `
         }
