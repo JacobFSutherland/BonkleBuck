@@ -37,16 +37,24 @@ export class AssetController {
         }else if(t.medium.type === 'Stock'){
             if(!this.currentStocks[t.reciever]){
                 this.currentStocks[t.reciever] = {};
+            }
+            if(!this.currentStocks[t.reciever][t.medium.ticker]){
                 this.currentStocks[t.reciever][t.medium.ticker] = 0;
             }
-            this.currentStocks[t.reciever][t.medium.ticker] += t.medium.ammount;
+            console.log(`adding ${t.medium.ammount} to ${t.medium.ticker} for ${t.reciever}`)
+            this.currentStocks[t.reciever][t.medium.ticker] += Number(t.medium.ammount);
+            console.log(`${t.reciever} now has ${this.currentStocks[t.reciever][t.medium.ticker]} ${t.medium.ticker}`)
 
             if(fullSync) {
                 if(!this.currentStocks[t.sender]){
                     this.currentStocks[t.sender] = {};
+                }
+                if(!this.currentStocks[t.sender][t.medium.ticker]){
                     this.currentStocks[t.sender][t.medium.ticker] = 0;
                 }
-                this.currentStocks[t.sender][t.medium.ticker] -= t.medium.ammount;
+                console.log(`removing ${t.medium.ammount} from ${t.medium.ticker} for ${t.sender}`)
+                this.currentStocks[t.sender][t.medium.ticker] -= Number(t.medium.ammount);
+                console.log(`${t.sender} now has ${this.currentStocks[t.sender][t.medium.ticker]} ${t.medium.ticker} left`)
             }
         }else if(t.medium.type === 'DiscordInvite' || t.medium.type === 'Mute'){
             if(fullSync) return;
@@ -84,6 +92,19 @@ export class AssetController {
             this.currentBalances[discordID] += Number(bucks);
         }
         return false;
+    }
+
+    sendBonkle(reciever: string, sender: string, a: string): Transaction{
+        let bonkle: BonkleBuck = {
+            type: 'BonkleBuck',
+            ammount: Number(a),
+        }
+        let t: Transaction = {
+            reciever,
+            sender,
+            medium: bonkle
+        }
+        return t;
     }
 
     returnFrozenAssets(discordID: string, bucks: string): void {
@@ -235,9 +256,11 @@ export class AssetController {
     getStockPortfolioEmbed(id: string): MessageEmbed {
         let embed = new MessageEmbed()
             .setTitle('Portfolio')
+        console.log(this.currentStocks);
         if(!this.currentStocks[id]) this.currentStocks[id] = {};
         let keys = Object.keys(this.currentStocks[id]);
         for(let i = 0; i < keys.length; i++){
+            console.log(`${keys[i]}, ${this.currentStocks[id][keys[i]]}`)
             embed.addField(keys[i], this.currentStocks[id][keys[i]] + '', true)
         }
         if(keys.length == 0) embed.setDescription('Litterally nothing');

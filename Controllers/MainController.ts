@@ -163,6 +163,7 @@ export class MainController{
                         this.BlockController.addTransactionToBlock(goodsPurchased);
                         return;
                     }
+
                     message.channel.send(`Transaction failed, try being less poor and/or cringe`);
                     }
                     if(msg[1] === 'mute'){
