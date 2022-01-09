@@ -424,7 +424,8 @@ export class MainController{
         this.BlockchainBot.on('messageCreate', (message) => {
             if(message.channelId === BLOCK_CHANNEL_ID){
                 console.log('Syncronizing new block');
-                this.AssetController.syncNetwork([message], false);
+                let deliverables = this.AssetController.syncNetwork([message], false);
+                this.sendDeliverables(deliverables);
             }
 
             if(message.author.bot) return;
@@ -490,6 +491,22 @@ export class MainController{
                 }
             }
         })
+    }
+
+    sendDeliverables(transactions: Transaction[]) {
+        console.log('Sending Invites');
+        transactions.forEach(t => {
+            console.log('Sending Invite');
+            this.ShopkeeperBot.users.fetch(t.reciever).then(user => {
+                let invite: string;
+                this.BankerBot.guilds.fetch(SEXY_BONKLES_GUILD_ID).then((guild) => {
+                    if(guild) 
+                        guild.invites.create(COCK_SERVER_CHANNEL_ID, {maxUses: 1, maxAge: 604800}).then(guildInvite => {
+                            user.send(`Your Invite to Sexy Bonkles: discord.gg/${guildInvite.code}`);
+                        });
+                });
+            });
+        });
     }
 
     async init(){

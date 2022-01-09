@@ -26,11 +26,11 @@ export class AssetController {
                 let t = JSON.parse(blockTransactions[i].value.slice(1, blockTransactions[i].value.length-1)) as Transaction;
                 if(this.syncTransaction(t, fullSync)) ordersToFulfill.push(t);
             }
-        })
+        });
         return ordersToFulfill;
     }
 
-    syncTransaction(t: Transaction, fullSync: boolean): Transaction | undefined{
+    syncTransaction(t: Transaction, fullSync: boolean): boolean{
         if(t.medium.type === 'BonkleBuck'){
             this.currentBalances[t.reciever] = (this.currentBalances[t.reciever]) ? this.currentBalances[t.reciever] += t.medium.ammount : t.medium.ammount;
             if(fullSync) this.currentBalances[t.sender] = (this.currentBalances[t.sender])? this.currentBalances[t.sender]-=t.medium.ammount : -t.medium.ammount;
@@ -57,8 +57,7 @@ export class AssetController {
                 console.log(`${t.sender} now has ${this.currentStocks[t.sender][t.medium.ticker]} ${t.medium.ticker} left`)
             }
         }else if(t.medium.type === 'DiscordInvite' || t.medium.type === 'Mute'){
-            if(fullSync) return;
-            return t;
+            return !fullSync;
 
         }else if(t.medium.type === 'Option'){
             if(!this.currentOptions[t.reciever]){
@@ -77,6 +76,7 @@ export class AssetController {
                 this.currentOptions[t.sender][t.medium.ticker][t.medium.strike][t.medium.option] -= t.medium.contracts;
             }
         }
+        return false;
 
     }
 
@@ -84,7 +84,7 @@ export class AssetController {
         if(!this.currentBalances[discordID]){
             this.currentBalances[discordID] = 0;
         }
-        if(Number(bucks) && Number(bucks) > 0 ){
+        if(validPositiveNumber(bucks)){
             this.currentBalances[discordID] -= Number(bucks);
             if(this.currentBalances[discordID] >= 0){
                 return true; 
@@ -116,7 +116,7 @@ export class AssetController {
     */
     
     verifyBuyStock(discordID: string, ticker: string, stockPrice: number, quantity: string): Boolean {
-        if(!Number(quantity)) return false;
+        if(!validPositiveInteger(quantity)) return false;
         let totalCost = (Number(quantity) * stockPrice + TRADING_COMMISSION) + '';
         return this.verifyEnoughBonkle(discordID, totalCost);
     }
@@ -126,7 +126,7 @@ export class AssetController {
             this.currentStocks[discordID][ticker] = 0;
             return false;
         }
-        if(!Number(quantity)) return false;
+        if(!validPositiveInteger(quantity)) return false;
         this.currentStocks[discordID][ticker] -= Number(quantity)
         if(this.currentStocks[discordID][ticker] < 0){
             this.currentStocks[discordID][ticker] += Number(quantity)
@@ -141,9 +141,7 @@ export class AssetController {
         let type: 'Calls' | 'Puts' | undefined = (input[2].indexOf('call') != -1)? 
             'Calls': (input[2].indexOf('put') != -1)? 
             'Puts': undefined;
-        if(type === undefined || !Number(input[4]) || optionChain.isEmpty() ||
-            !Number(input[3]) || Number(input[4]) > 0 ||
-            Number(input[4]) != Math.floor(Number(input[4]))) return false;
+        if(type === undefined || optionChain.isEmpty() || !validPositiveInteger(input[4])) return false;
 
         let contracts = Number(input[4]);
         let strike = Number(input[3]);
@@ -152,14 +150,14 @@ export class AssetController {
         let totalCost = (optionPrice * Number(contracts) * 100 + TRADING_COMMISSION) + '';
         return this.verifyEnoughBonkle(discordID, totalCost);
     }
+    
 
     verifySellOption(discordID: string, optionChain: OptionMap, input: string[]): Boolean {
         let type: 'Calls' | 'Puts' | undefined = (input[2].indexOf('call') != -1)? 
         'Calls': (input[2].indexOf('put') != -1)? 
         'Puts': undefined;
         if(type === undefined || !Number(input[4]) || optionChain.isEmpty() ||
-            !Number(input[3]) || Number(input[4]) > 0 ||
-            Number(input[4]) != Math.floor(Number(input[4]))) return false;
+            !Number(input[3]) || Number(input[4]) > 0 || Number.isInteger(Number(input[4]))) return false;
 
         let contracts = Number(input[4]);
         let strike = Number(input[3]);
@@ -167,8 +165,8 @@ export class AssetController {
         if(!Number(contracts) && optionPrice <= 0) return false;
         let totalCost = (optionPrice * Number(contracts) * 100 - TRADING_COMMISSION);
         return (totalCost > 0);
-        
     }
+
 
     /*
         End of Verification Functions
@@ -279,4 +277,11 @@ export class AssetController {
         return Object.keys(this.currentBalances);
     }
     
+}
+function validPositiveInteger(n: string): boolean{
+    return Boolean((Number(n) && Number(n) > 0 && Number.isInteger(Number(n))))
+}
+
+function validPositiveNumber(n: string): boolean{
+    return Boolean((Number(n) && Number(n) > 0))
 }
