@@ -9,11 +9,13 @@ export class BlockController {
   currentBlock: Block;
   targetBlockTime: number;
   blockReward: number;
+  isBeingRead: boolean;
 
   constructor(blockReward: number, targetBlockTime: number){
       this.currentBlock = new Block(0, blockReward, targetBlockTime);
       this.blockReward = blockReward;
       this.targetBlockTime = targetBlockTime;
+      this.isBeingRead = false;
   }
 
   addTransactionToBlock(t: Transaction){
@@ -22,7 +24,8 @@ export class BlockController {
 
   async trySolution(solution: BlockGuess): Promise<Transaction | void> {
     console.log('Trying Solution');
-    if(this.currentBlock.checkAnswer(solution.answer)){
+    if(this.currentBlock.checkAnswer(solution.answer) && !this.isBeingRead){
+      this.isBeingRead = true;
       // Attempt was the answer
       console.log('Solution was right')
 
@@ -56,7 +59,7 @@ export class BlockController {
       await this.createNewBlock();
 
       console.log('Created new block');
-      
+      this.isBeingRead = false;
       return solvedTransaction;
 
     }else{
