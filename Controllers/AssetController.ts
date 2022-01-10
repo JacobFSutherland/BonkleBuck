@@ -116,7 +116,7 @@ export class AssetController {
     */
     
     verifyBuyStock(discordID: string, ticker: string, stockPrice: number, quantity: string): Boolean {
-        if(!validPositiveInteger(quantity)) return false;
+        if(!validPositiveInteger(quantity) && !validPositiveInteger(stockPrice+'')) return false;
         let totalCost = (Number(quantity) * stockPrice + TRADING_COMMISSION) + '';
         return this.verifyEnoughBonkle(discordID, totalCost);
     }
