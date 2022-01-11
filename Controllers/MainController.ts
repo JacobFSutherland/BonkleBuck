@@ -64,7 +64,10 @@ export class MainController{
                 if(msg[0] === '!flip'){
                     if(msg[1]){
                         if(this.AssetController.verifyEnoughBonkle(message.author.id, msg[1]) || msg[1] === 'bal' || msg[1] === 'all'){
-                            if(msg[1] === 'bal' || msg[1] === 'all') msg[1] = this.AssetController.getBonkleBalance(message.author.id) + '';
+                            if(msg[1] === 'bal' || msg[1] === 'all'){
+                                msg[1] = this.AssetController.getBonkleBalance(message.author.id) + '';
+                                this.AssetController.freezeAssets(message.author.id, msg[1])
+                            } 
                             console.log('Flipping');
                             let medium: BonkleBuck = {type: 'BonkleBuck', ammount: Number(msg[1])}; // Wagered Ammount
                             if(Math.random() >= 0.5){

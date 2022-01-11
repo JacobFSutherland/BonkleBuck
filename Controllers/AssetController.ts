@@ -111,6 +111,10 @@ export class AssetController {
         this.currentBalances[discordID] += Number(bucks);
     }
 
+    freezeAssets(discordID: string, bucks: string): void {
+        this.currentBalances[discordID] -= Number(bucks);
+    }
+
     /*
         Verification Functions
     */
