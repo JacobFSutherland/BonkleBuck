@@ -68,10 +68,6 @@ export class BlockController {
     }
   }
 
-  private breakDownAndSubmit() {
-
-  }
-
   private async splitAndSubmitBlocks(s: BlockGuess, t: Transaction[]){
     if(t.length < 20){
       await this.sumbitBlock(s, t);

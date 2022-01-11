@@ -66,8 +66,22 @@ export class MainController{
                         if(this.AssetController.verifyEnoughBonkle(message.author.id, msg[1]) || msg[1] === 'bal' || msg[1] === 'all'){
                             if(msg[1] === 'bal' || msg[1] === 'all'){
                                 msg[1] = this.AssetController.getBonkleBalance(message.author.id) + '';
+                                if(msg[1] == '0'){
+                                    message.channel.send('You litterally have zero bonkle bucks, go mine some blocks you poor');
+                                    return;
+                                }
                                 this.AssetController.freezeAssets(message.author.id, msg[1])
                             } 
+                            let mult = 1;
+                            if(msg[2]){
+                                let odds = msg[2].split(':');
+                                if(odds.length === 2){
+                                    let mult = Number(odds[0])/Number(odds[1]);
+                                    if(Number(mult)){
+
+                                    }
+                                }
+                            }
                             console.log('Flipping');
                             let medium: BonkleBuck = {type: 'BonkleBuck', ammount: Number(msg[1])}; // Wagered Ammount
                             if(Math.random() >= 0.5){
