@@ -276,12 +276,21 @@ export class AssetController {
         }
         if(keys.length == 0) stockEmbed.setDescription('Litterally nothing');
 
-        let puts = Object.keys(this.currentOptions[id][''])
-        for(let i = 0; i < puts.length; i++){
-
+        let puts = new MessageEmbed()
+            .setTitle('Put Options')
+        let calls = new MessageEmbed()
+            .setTitle('Call Options')
+        let tickers = Object.keys(this.currentOptions[id])
+        for(let i = 0; i < tickers.length; i++){
+            let strikes = Object.keys(this.currentOptions[id][tickers[i]])
+            for(let j = 0; j < strikes.length; j++){
+                if(this.currentOptions[id][tickers[i]][Number(strikes[j])].Puts)
+                    puts.addField(`${tickers[i]} at $${strikes[j]} Strike`, this.currentOptions[id][tickers[i]][Number(strikes[j])].Puts + '');
+                if(this.currentOptions[id][tickers[i]][Number(strikes[j])].Calls)
+                    calls.addField(`${tickers[i]} at $${strikes[j]} Strike`, this.currentOptions[id][tickers[i]][Number(strikes[j])].Calls + '');
+            }
         }
-        embed.push(stockEmbed);
-        return embed
+        return [stockEmbed, puts, calls];
     }
 
     getBonkleBalance(id: string): number {

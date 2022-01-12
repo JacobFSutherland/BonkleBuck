@@ -62,16 +62,24 @@ export class MainController{
                     .replace('all', this.AssetController.getBonkleBalance(message.author.id) + '')
                     .replace('bal', this.AssetController.getBonkleBalance(message.author.id) + '')
 
+                console.log('Raw Message: ', rawMessage);
                 let msg = rawMessage.split(' ')
                 if(msg[0] === '!gamble'){
                     message.channel.send({embeds: [BanditEmbed]});
                 }
-                if(Number(msg[1]))
-                this.AssetController.freezeAssets(message.author.id, msg[1]);
-                if(this.AssetController.getBonkleBalance(message.author.id) > 0){
-                    let g: CasinoGame = new CasinoGame(msg, rawMessage.includes('danger'));
+                if(Number(msg[1])) this.AssetController.freezeAssets(message.author.id, msg[1]);
+                if(this.AssetController.getBonkleBalance(message.author.id) >= 0){
+                    console.log('Gambler addict has enough bonkle to wager');
                     try{
+                        let g: CasinoGame = new CasinoGame(msg, rawMessage.includes('danger'));
                         let results = g.play(message.author.id, 'COCKSINO');
+                        if(results.kick){
+                            message.channel.send(`Congradulations! you got kicked`);
+                            sleep(3000).then(()=>{
+                                message.member?.kick(); 
+                            }) 
+                            return;
+                        }
                         message.channel.send(results.message);
                         if(results.transaction) this.BlockController.addTransactionToBlock(results.transaction);
                         if(results.kick){
@@ -80,8 +88,12 @@ export class MainController{
                                 message.member?.kick(); 
                             }) 
                         }
-
+                        if(results.playersFavor && Number(msg[1])){
+                            this.AssetController.returnFrozenAssets(message.author.id, msg[1]);
+                        }
+                        return;
                     }catch(e){
+                        console.log(e);
                         message.channel.send(`STOP FUCKING UP THE COMMAND!!!`);
                         this.AssetController.returnFrozenAssets(message.author.id, msg[1]);
                         return;
