@@ -2,7 +2,7 @@ import { AnyChannel, Channel, Client, Collection, FetchChannelOptions, Message, 
 import { parse } from 'node-html-parser';
 import got from "got/dist/source";
 import { CockChain, Banker, Shopkeeper, Bandit, BanditEmbed, ShopInventoryEmbed, StockHelpEmbed, StockTerminologyEmbed, HelpEmbed } from "../Discord/Client";
-import { BlockGuess, Transaction, BonkleBuck, NFT, Stock, Option, DiscordInvite, OptionTable, OptionMap, OptionStat, OptionValue, Trade } from "../models";
+import { BlockGuess, Transaction, BonkleBuck, NFT, Stock, Option, DiscordInvite, OptionTable, OptionMap, OptionStat, OptionValue, Trade, CasinoGame } from "../models";
 import { BlockController } from "./"; 
 import { BLOCK_CHANNEL_ID, BANDIT_TOKEN, COCKSINO_CHANNEL_ID, SEXY_BONKLES_GUILD_ID, COCK_SERVER_CHANNEL_ID, MINING_CHANNEL_ID, BAAZAR_CHANNEL_ID, COCK_EXCHANGE_CHANNEL_ID, STOCK_TRANSACTION_FEE, COCKCHAIN_TOKEN, BANKER_TOKEN, BLOCK_REWARD, BLOCK_TIME, SHOPKEEPER_TOKEN, TRADING_COMMISSION } from '../env'
 import { AssetController } from "./AssetController";
@@ -57,95 +57,39 @@ export class MainController{
             if(message.author.bot) return;
             if(message.channelId === COCKSINO_CHANNEL_ID){
                 console.log('Bandit Request made: ', message.content.toLowerCase());
-                let msg = message.content.toLowerCase().split(' ')
+                let rawMessage = message.content.toLowerCase();
+                rawMessage = rawMessage
+                    .replace('all', this.AssetController.getBonkleBalance(message.author.id) + '')
+                    .replace('bal', this.AssetController.getBonkleBalance(message.author.id) + '')
+
+                let msg = rawMessage.split(' ')
                 if(msg[0] === '!gamble'){
                     message.channel.send({embeds: [BanditEmbed]});
                 }
-                if(msg[0] === '!flip'){
-                    if(msg[1]){
-                        if(this.AssetController.verifyEnoughBonkle(message.author.id, msg[1]) || msg[1] === 'bal' || msg[1] === 'all'){
-                            if(msg[1] === 'bal' || msg[1] === 'all'){
-                                msg[1] = this.AssetController.getBonkleBalance(message.author.id) + '';
-                                if(msg[1] == '0'){
-                                    message.channel.send('You litterally have zero bonkle bucks, go mine some blocks you poor');
-                                    return;
-                                }
-                                this.AssetController.freezeAssets(message.author.id, msg[1])
-                            } 
-                            let mult = 1;
-                            if(msg[2]){
-                                let odds = msg[2].split(':');
-                                if(odds.length === 2){
-                                    let mult = Number(odds[0])/Number(odds[1]);
-                                    if(Number(mult)){
+                if(Number(msg[1]))
+                this.AssetController.freezeAssets(message.author.id, msg[1]);
+                if(this.AssetController.getBonkleBalance(message.author.id) > 0){
+                    let g: CasinoGame = new CasinoGame(msg, rawMessage.includes('danger'));
+                    try{
+                        let results = g.play(message.author.id, 'COCKSINO');
+                        message.channel.send(results.message);
+                        if(results.transaction) this.BlockController.addTransactionToBlock(results.transaction);
+                        if(results.kick){
+                            message.channel.send(`Congradulations! you got kicked`);
+                            sleep(3000).then(()=>{
+                                message.member?.kick(); 
+                            }) 
+                        }
 
-                                    }
-                                }
-                            }
-                            console.log('Flipping');
-                            let medium: BonkleBuck = {type: 'BonkleBuck', ammount: Number(msg[1])}; // Wagered Ammount
-                            if(Math.random() >= 0.5){
-                                message.channel.send(`Unfortunate outcome! you gained ${msg[1]} Bonkle Bucks in the next block`);
-                                this.AssetController.returnFrozenAssets(message.author.id, msg[1])
-                                let t: Transaction = {
-                                    reciever: message.author.id,
-                                    medium,
-                                    sender: 'COCKSINO'
-                                }
-                                this.BlockController.addTransactionToBlock(t);
-                                if(Math.random() < 0.01){
-                                    message.channel.send(`Super unfortunate! You also got 51 Bonle Bucks`);
-                                    let jackpot: Transaction = {
-                                        reciever: message.author.id,
-                                        medium: {
-                                            type: 'BonkleBuck',
-                                            ammount: 51,
-                                        },
-                                        sender: 'COCKSINO'
-                                    }
-                                    this.BlockController.addTransactionToBlock(jackpot);
-                                }
-                                return;
-                            }else{
-                                let t: Transaction = {
-                                    reciever: 'COCKSINO',
-                                    medium,
-                                    sender: message.author.id
-                                }
-                                message.channel.send(`Congradulations! you lost ${msg[1]} Bonkle Bucks in the next block`);
-                                this.BlockController.addTransactionToBlock(t);
-                                if(Math.random() < 0.01){
-                                    message.channel.send(`Congradulations! you also got kicked`);
-                                    sleep(3000).then(()=>{
-                                        message.member?.kick(); 
-                                    }) 
-                                }
-                                return;
-                            }                  
-                        }
-                        if(msg[1] === 'danger'){
-                            if(Math.random() >= 0.5){
-                                message.channel.send(`Unfortunate outcome! you gained 50 Bonkle Bucks in the next block`);
-                                let t: Transaction = {
-                                    reciever: message.author.id,
-                                    medium: {
-                                        type: 'BonkleBuck',
-                                        ammount: 50
-                                    },
-                                    sender: 'COCKSINO'
-                                }
-                                this.BlockController.addTransactionToBlock(t);
-                            }else{
-                                message.channel.send(`Congradulations! you got kicked`);
-                                sleep(3000).then(()=>{
-                                    message.member?.kick(); 
-                                }) 
-                                return;
-                            }
-                        }
+                    }catch(e){
+                        message.channel.send(`STOP FUCKING UP THE COMMAND!!!`);
+                        this.AssetController.returnFrozenAssets(message.author.id, msg[1]);
+                        return;
                     }
-                        
                 }
+                this.AssetController.returnFrozenAssets(message.author.id, msg[1]);
+                message.channel.send(`Go mine some blocks you poor`);
+            
                 
             }
             
@@ -209,22 +153,21 @@ export class MainController{
             if(message.author.bot) return;
             if(message.channelId === COCK_EXCHANGE_CHANNEL_ID){
                 if(message.content.toLowerCase() === '!cock'){
-
                     message.channel.send({embeds:[StockHelpEmbed, StockTerminologyEmbed]});
                 }
                 if(message.content.toLowerCase() === '!portfolio'){
-                    let portfolio: MessageEmbed = this.AssetController.getStockPortfolioEmbed(message.author.id)
-                    message.channel.send({embeds: [portfolio]});
+                    let portfolio: MessageEmbed[] = this.AssetController.getStockPortfolioEmbed(message.author.id)
+                    message.channel.send({embeds: portfolio});
                 }
                 let msg = message.content.toLowerCase().split(' ');
                 if(msg.length === 2 && msg[0] === '!stock'){
                     msg[1] = msg[1].replace('$', '');
-                    let stockValue: number = await this.getStockPrice(msg[1]);
+                    let stockValue: number = await this.getStockPrice(msg[1].replace('$', ''));
                     message.channel.send(`$${msg[1]} is currently trading for $${stockValue}`);
                     return;
                 }
                 if(msg[0] === '!buy'){
-                    let stockValue: number = await this.getStockPrice(msg[1]);
+                    let stockValue: number = await this.getStockPrice(msg[1].replace('$', ''));
                     if(!this.AssetController.verifyBuyStock(message.author.id, msg[1], stockValue, msg[2])){
                         message.channel.send('Buy order failed, not enough Bonkle Bucks');
                         return;
@@ -237,7 +180,7 @@ export class MainController{
                 }
 
                 if(msg[0] === '!sell' && Number(msg[2]) && Number(msg[2]) > 0 ){
-                    let stockValue: number = await this.getStockPrice(msg[1]);
+                    let stockValue: number = await this.getStockPrice(msg[1].replace('$', ''));
                     if(!this.AssetController.verifySellStock(message.author.id, msg[1], stockValue, msg[2])){
                         message.channel.send('Sell order failed, not enough Bonkle Bucks');
                         return;
@@ -268,8 +211,8 @@ export class MainController{
                     }
                 }
                 //{ name: 'How do I buy options?', value: '\`!buyOption [Stock Ticker] [Option Type] [Strike Price] [Ammount]\` You can only buy whole numbers of options'},
-                if(msg[0] === '!buyoption' && msg.length === 5 && (msg[2] === 'calls' || msg[2] === 'puts')){
-                    let optionChain: OptionMap = await this.getOptions(msg[1]);
+                if(msg[0] === '!buyoption' && msg.length === 5){
+                    let optionChain: OptionMap = await this.getOptions(msg[1].replace('$', ''));
                     let validTransaction = this.AssetController.verifyBuyOption(message.author.id, optionChain, msg);
                     if(validTransaction){
                         let t: Trade = this.AssetController.tradeOption(message.author.id, 'BonkleBuckBanker' , optionChain, msg);
@@ -284,7 +227,7 @@ export class MainController{
 
                 //{ name: 'How do I buy options?', value: '\`!buyOption [Stock Ticker] [Option Type] [Strike Price] [Ammount]\` You can only buy whole numbers of options'},
                 if(msg[0] === '!selloption' && msg.length === 5){
-                    let optionChain: OptionMap = await this.getOptions(msg[1]);
+                    let optionChain: OptionMap = await this.getOptions(msg[1].replace('$', ''));
                     let validTransaction = this.AssetController.verifySellOption(message.author.id, optionChain, msg);
                     if(validTransaction){
                         let t: Trade = this.AssetController.tradeOption('BonkleBuckBanker', message.author.id, optionChain, msg);
@@ -517,6 +460,18 @@ export class MainController{
 
                 if(msg.includes('!send')){
                     let msgArr = msg.split(' ');
+                    
+                    if(msgArr.length === 4)
+                    if(msgArr[2] === 'bonkle'){
+                        let valid = this.AssetController.verifyEnoughBonkle(message.author.id, msgArr[3]);
+                        if(valid){
+                            console.log()
+                            let t = this.AssetController.sendBonkle(msgArr[1], message.author.id, msgArr[3]);
+                            this.BlockController.addTransactionToBlock(t);
+                            message.channel.send(`Transaction successful`);
+                            return; 
+                        }
+                    }
                     message.channel.send(`Transaction failed, try being less poor and/or cringe`);
                 }
             }

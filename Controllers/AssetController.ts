@@ -1,12 +1,13 @@
 import { COCK_SERVER_CHANNEL_ID, SEXY_BONKLES_GUILD_ID, TRADING_COMMISSION } from "../env"
 import { BonkleBuck, Option, OptionMap, OptionValue, Stock, Trade, Transaction } from "../models"
 import { Message, MessageEmbed } from 'discord.js'
+import { CronJob } from 'cron';
 
 export class AssetController {
     private currentBalances: {[id: string] : number}
     private currentNFTs: {[id: string] : string[]}
     private currentStocks: {[id: string] : {[ticker: string]: number}}
-    private currentOptions: {[id: string]: {[ticker: string]: {[strike: number]: OptionValue}}}
+    private currentOptions: {[id: string]: {[ticker: string]: {[strike: number]: OptionValue}}} 
     constructor(){
         this.currentBalances = {};
         this.currentNFTs = {};
@@ -60,20 +61,18 @@ export class AssetController {
             return !fullSync;
 
         }else if(t.medium.type === 'Option'){
-            if(!this.currentOptions[t.reciever]){
-                this.currentOptions[t.reciever] = {};
-                this.currentOptions[t.reciever][t.medium.ticker] = [];
-                this.currentOptions[t.reciever][t.medium.ticker][t.medium.strike] = {Calls: 0, Puts: 0};
-            }
+            if(!this.currentOptions[t.reciever]) this.currentOptions[t.reciever] = {};
+            if(!this.currentOptions[t.reciever][t.medium.ticker]) this.currentOptions[t.reciever][t.medium.ticker] = [];
+            if(!this.currentOptions[t.reciever][t.medium.ticker][t.medium.strike]) this.currentOptions[t.reciever][t.medium.ticker][t.medium.strike] = {Calls: 0, Puts: 0};
             this.currentOptions[t.reciever][t.medium.ticker][t.medium.strike][t.medium.option] += t.medium.contracts;
+            console.log(`${t.reciever} now has ${this.currentOptions[t.reciever][t.medium.ticker][t.medium.strike][t.medium.option]} ${t.medium.ticker} options at the ${t.medium.strike} strike`)
 
             if(fullSync) {
-                if(!this.currentStocks[t.sender]){
-                    this.currentOptions[t.sender] = {};
-                    this.currentOptions[t.sender][t.medium.ticker] = [];
-                    this.currentOptions[t.sender][t.medium.ticker][t.medium.strike] = {Calls: 0, Puts: 0};
-                }
+                if(!this.currentOptions[t.sender]) this.currentOptions[t.sender] = {};
+                if(!this.currentOptions[t.sender][t.medium.ticker]) this.currentOptions[t.sender][t.medium.ticker] = [];
+                if(!this.currentOptions[t.sender][t.medium.ticker][t.medium.strike]) this.currentOptions[t.sender][t.medium.ticker][t.medium.strike] = {Calls: 0, Puts: 0};
                 this.currentOptions[t.sender][t.medium.ticker][t.medium.strike][t.medium.option] -= t.medium.contracts;
+                console.log(`${t.sender} now has ${this.currentOptions[t.sender][t.medium.ticker][t.medium.strike][t.medium.option]} ${t.medium.ticker} options at the ${t.medium.strike} strike`)
             }
         }
         return false;
@@ -126,18 +125,26 @@ export class AssetController {
     }
 
     verifySellStock(discordID: string, ticker: string, stockPrice: number, quantity: string): Boolean {
+        if(ticker.charAt(0) !== '$'){
+            ticker = '$' + ticker;
+        }
         if(!this.currentStocks[discordID][ticker]){
             this.currentStocks[discordID][ticker] = 0;
             return false;
         }
         if(!validPositiveInteger(quantity)) return false;
+        console.log('Valid Positive Quantity')
         this.currentStocks[discordID][ticker] -= Number(quantity)
         if(this.currentStocks[discordID][ticker] < 0){
+            console.log('Not enough stock');
+            console.log('user has ', this.currentStocks[discordID][ticker])
+            console.log('user wanted to sell ', quantity)
             this.currentStocks[discordID][ticker] += Number(quantity)
             return false;
         } 
 
         let totalCost = Number(quantity) * stockPrice - TRADING_COMMISSION;
+        console.log(totalCost);
         return (totalCost > 0);
     }
 
@@ -146,12 +153,13 @@ export class AssetController {
             'Calls': (input[2].indexOf('put') != -1)? 
             'Puts': undefined;
         if(type === undefined || optionChain.isEmpty() || !validPositiveInteger(input[4])) return false;
-
+        console.log('Trying to buy ', type);
         let contracts = Number(input[4]);
         let strike = Number(input[3]);
         let optionPrice = optionChain[type][strike].ask;
         if(!Number(contracts) && optionPrice <= 0) return false;
         let totalCost = (optionPrice * Number(contracts) * 100 + TRADING_COMMISSION) + '';
+        console.log(`Total cost: ${totalCost}`);
         return this.verifyEnoughBonkle(discordID, totalCost);
     }
     
@@ -161,7 +169,7 @@ export class AssetController {
         'Calls': (input[2].indexOf('put') != -1)? 
         'Puts': undefined;
         if(type === undefined || !Number(input[4]) || optionChain.isEmpty() ||
-            !Number(input[3]) || Number(input[4]) > 0 || Number.isInteger(Number(input[4]))) return false;
+            !Number(input[3]) || validPositiveInteger(input[4])) return false;
 
         let contracts = Number(input[4]);
         let strike = Number(input[3]);
@@ -255,17 +263,24 @@ export class AssetController {
     */
 
 
-    getStockPortfolioEmbed(id: string): MessageEmbed {
-        let embed = new MessageEmbed()
-            .setTitle('Portfolio')
+    getStockPortfolioEmbed(id: string): MessageEmbed[] {
+        let embed: MessageEmbed[] = [];
+        let stockEmbed = new MessageEmbed()
+            .setTitle('Stocks')
         console.log(this.currentStocks);
         if(!this.currentStocks[id]) this.currentStocks[id] = {};
         let keys = Object.keys(this.currentStocks[id]);
         for(let i = 0; i < keys.length; i++){
             console.log(`${keys[i]}, ${this.currentStocks[id][keys[i]]}`)
-            embed.addField(keys[i], this.currentStocks[id][keys[i]] + '', true)
+            stockEmbed.addField(keys[i], this.currentStocks[id][keys[i]] + '', true)
         }
-        if(keys.length == 0) embed.setDescription('Litterally nothing');
+        if(keys.length == 0) stockEmbed.setDescription('Litterally nothing');
+
+        let puts = Object.keys(this.currentOptions[id][''])
+        for(let i = 0; i < puts.length; i++){
+
+        }
+        embed.push(stockEmbed);
         return embed
     }
 

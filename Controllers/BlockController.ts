@@ -118,15 +118,21 @@ export class BlockController {
       };
       payload.embeds[0].fields.push(transaction);
     }
-
-    await got(
-      BLOCK_WEBHOOK,
-      {
-        method: 'post',
-        body: JSON.stringify(payload),
-        headers: {'Content-Type': 'application/json'} 
+    while(true){
+      try{
+        await got(
+          {
+            url: BLOCK_WEBHOOK,
+            method: 'post',
+            body: JSON.stringify(payload),
+            headers: {'Content-Type': 'application/json'},
+          }
+        )
+        return;
+      }catch(e){
+        await sleep(2000);
       }
-    )
+    }
   }
 
   async createNewBlock(){
@@ -154,4 +160,10 @@ export class BlockController {
     );
     console.log('Answer: ', this.currentBlock.blockAnswer);
   }
+}
+
+function sleep(ms: number) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
 }
