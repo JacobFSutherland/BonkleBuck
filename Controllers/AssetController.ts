@@ -79,24 +79,24 @@ export class AssetController {
 
     }
 
-    verifyEnoughBonkle(discordID: string, bucks: string): Boolean {
+    verifyEnoughBonkle(discordID: string, bucks: number): Boolean {
         if(!this.currentBalances[discordID]){
             this.currentBalances[discordID] = 0;
         }
-        if(validPositiveNumber(bucks)){
-            this.currentBalances[discordID] -= Number(bucks);
+        if(bucks > 0){
+            this.currentBalances[discordID] -= bucks;
             if(this.currentBalances[discordID] >= 0){
                 return true; 
             }
-            this.currentBalances[discordID] += Number(bucks);
+            this.currentBalances[discordID] += bucks;
         }
         return false;
     }
 
-    sendBonkle(reciever: string, sender: string, a: string): Transaction{
+    sendBonkle(reciever: string, sender: string, a: number): Transaction{
         let bonkle: BonkleBuck = {
             type: 'BonkleBuck',
-            ammount: Number(a),
+            ammount: a,
         }
         let t: Transaction = {
             reciever,
@@ -120,7 +120,7 @@ export class AssetController {
     
     verifyBuyStock(discordID: string, ticker: string, stockPrice: number, quantity: string): Boolean {
         if(!validPositiveInteger(quantity) && !validPositiveInteger(stockPrice+'')) return false;
-        let totalCost = (Number(quantity) * stockPrice + TRADING_COMMISSION) + '';
+        let totalCost = (Number(quantity) * stockPrice + TRADING_COMMISSION);
         return this.verifyEnoughBonkle(discordID, totalCost);
     }
 
@@ -158,7 +158,7 @@ export class AssetController {
         let strike = Number(input[3]);
         let optionPrice = optionChain[type][strike].ask;
         if(!Number(contracts) && optionPrice <= 0) return false;
-        let totalCost = (optionPrice * Number(contracts) * 100 + TRADING_COMMISSION) + '';
+        let totalCost = (optionPrice * Number(contracts) * 100 + TRADING_COMMISSION);
         console.log(`Total cost: ${totalCost}`);
         return this.verifyEnoughBonkle(discordID, totalCost);
     }

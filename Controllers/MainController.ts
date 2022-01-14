@@ -2,7 +2,7 @@ import { AnyChannel, Channel, Client, Collection, FetchChannelOptions, Message, 
 import { parse } from 'node-html-parser';
 import got from "got/dist/source";
 import { CockChain, Banker, Shopkeeper, Bandit, BanditEmbed, ShopInventoryEmbed, StockHelpEmbed, StockTerminologyEmbed, HelpEmbed } from "../Discord/Client";
-import { BlockGuess, Transaction, BonkleBuck, NFT, Stock, Option, DiscordInvite, OptionTable, OptionMap, OptionStat, OptionValue, Trade, CasinoGame } from "../models";
+import { BlockGuess, Transaction, BonkleBuck, NFT, Stock, Option, DiscordInvite, OptionTable, OptionMap, OptionStat, OptionValue, Trade, createShopTransaction, createTransaction } from "../models";
 import { BlockController } from "./"; 
 import { BLOCK_CHANNEL_ID, BANDIT_TOKEN, COCKSINO_CHANNEL_ID, SEXY_BONKLES_GUILD_ID, COCK_SERVER_CHANNEL_ID, MINING_CHANNEL_ID, BAAZAR_CHANNEL_ID, COCK_EXCHANGE_CHANNEL_ID, STOCK_TRANSACTION_FEE, COCKCHAIN_TOKEN, BANKER_TOKEN, BLOCK_REWARD, BLOCK_TIME, SHOPKEEPER_TOKEN, TRADING_COMMISSION } from '../env'
 import { AssetController } from "./AssetController";
@@ -14,10 +14,10 @@ let cockchain = CockChain.login(COCKCHAIN_TOKEN);
 
 console.log('Banker Logging in');
 let banker = Banker.login(BANKER_TOKEN);
-
+//
 console.log('Shopkeeper Logging in');
 let shop = Shopkeeper.login(SHOPKEEPER_TOKEN);
-
+//
 console.log('Bandit Logging in');
 let bandit = Bandit.login(BANDIT_TOKEN);
 
@@ -46,211 +46,122 @@ export class MainController{
 
     startClient() {
         // Block Miner
-        this.startBlockChainBot();
+        this.startBlockChainBot(); 
         this.startBankerBot();
         this.startShopkeeperBot();
         this.startBandit();
     }
 
     startBandit() {
-        this.Bandit.on('messageCreate', message => {
-            if(message.author.bot) return;
-            if(message.channelId === COCKSINO_CHANNEL_ID){
-                console.log('Bandit Request made: ', message.content.toLowerCase());
-                let rawMessage = message.content.toLowerCase();
-                rawMessage = rawMessage
-                    .replace('all', this.AssetController.getBonkleBalance(message.author.id) + '')
-                    .replace('bal', this.AssetController.getBonkleBalance(message.author.id) + '')
-
-                console.log('Raw Message: ', rawMessage);
-                let msg = rawMessage.split(' ')
-                if(msg[0] === '!gamble'){
-                    message.channel.send({embeds: [BanditEmbed]});
-                }
-                if(Number(msg[1])) this.AssetController.freezeAssets(message.author.id, msg[1]);
-                if(this.AssetController.getBonkleBalance(message.author.id) >= 0){
-                    console.log('Gambler addict has enough bonkle to wager');
-                    try{
-                        let g: CasinoGame = new CasinoGame(msg, rawMessage.includes('danger'));
-                        let results = g.play(message.author.id, 'COCKSINO');
-                        if(results.kick){
-                            message.channel.send(`Congradulations! you got kicked`);
-                            sleep(3000).then(()=>{
-                                message.member?.kick(); 
-                            }) 
+        this.Bandit.on('interactionCreate', (interaction) => {
+            console.log('Bandit got gambler');
+            if(!interaction.isCommand()) return;
+            const { commandName, options, user } = interaction;
+            switch(commandName){
+                case 'flip':
+                    console.log('In flip');
+                    if(this.AssetController.verifyEnoughBonkle(user.id, options.getNumber('wager') || -1)){
+                        console.log('Addict has buck');
+                        if(Math.random() < 0.5){
+                            // win
+                            console.log('Addict has won');
+                            let t = createTransaction('COCKSINO', interaction.user.id, options.getNumber('wager')!);
+                            this.BlockController.addTransactionToBlock(t);
+                            interaction.reply(`Unfortunate Outcome! You won ${options.getNumber('wager')!} Bonkle Bucks!`)
+                            return;
+                        }else{
+                            // lose
+                            console.log('Addict has lost');
+                            let t = createTransaction(interaction.user.id, 'COCKSINO', options.getNumber('wager')!);
+                            this.BlockController.addTransactionToBlock(t);
+                            interaction.reply(`Congradulations! You lost ${options.getNumber('wager')!} Bonkle Bucks!`)
                             return;
                         }
-                        message.channel.send(results.message);
-                        if(results.transaction) this.BlockController.addTransactionToBlock(results.transaction);
-                        if(results.kick){
-                            message.channel.send(`Congradulations! you got kicked`);
-                            sleep(3000).then(()=>{
-                                message.member?.kick(); 
-                            }) 
+                    }
+                    interaction.reply(`Go mine some blocks you poor`)
+                    return;
+                case 'flipodds':
+                    if(this.AssetController.verifyEnoughBonkle(user.id, options.getNumber('wager') || -1)){
+                        let odds = options.getString('odds')?.split(':');
+                        if(!odds || odds.length !== 2 || !Number(odds[0]) || !Number(odds[1])) return; // odds error
+                        if(Math.random() < Number(odds[0])/(Number(odds[0])+Number(odds[1]))){
+                            let t = createTransaction('COCKSINO', interaction.user.id, (Number(odds[0])+Number(odds[1])));
+                            this.BlockController.addTransactionToBlock(t);
+                            interaction.reply(`Unfortunate Outcome! You gained ${(Number(odds[0])+Number(odds[1]))} Bonkle Bucks!`)
+                            return;
+                            // win
+                        }else{
+                            // lose
+                            let t = createTransaction(interaction.user.id, 'COCKSINO', options.getNumber('wager')!);
+                            this.BlockController.addTransactionToBlock(t);
+                            interaction.reply(`Congradulations! You lost ${options.getNumber('wager')!} Bonkle Bucks!`)
+                            return;
                         }
-                        if(results.playersFavor && Number(msg[1])){
-                            this.AssetController.returnFrozenAssets(message.author.id, msg[1]);
-                        }
+                    }
+                    interaction.reply(`Go mine some blocks you poor`)
+                    return;
+                case 'dangerflip':
+                    if(Math.random() < 0.5){
+                        interaction.reply('Congradulations! you got kicked!');
+                        sleep(3000).then(()=>{
+                            Bandit.guilds.cache.get(SEXY_BONKLES_GUILD_ID)?.members.kick(interaction.user);
+                        })
                         return;
-                    }catch(e){
-                        console.log(e);
-                        message.channel.send(`STOP FUCKING UP THE COMMAND!!!`);
-                        this.AssetController.returnFrozenAssets(message.author.id, msg[1]);
+                    }else{
+                        let t = createTransaction( 'COCKSINO', interaction.user.id, 50);
+                        this.BlockController.addTransactionToBlock(t);
+                        interaction.reply(`Unfortunate Outcome! You gained 50 Bonkle Bucks!`)
                         return;
                     }
+                default: 
+                    interaction.reply('cum cum cum cum cum');
+                    return;
                 }
-                this.AssetController.returnFrozenAssets(message.author.id, msg[1]);
-                message.channel.send(`Go mine some blocks you poor`);
-            
-                
-            }
-            
         })
     }
 
     startShopkeeperBot() {
-        this.ShopkeeperBot.on('messageCreate', message => {
-            if(message.author.bot) return;
-            if(message.channelId === BAAZAR_CHANNEL_ID){
-                console.log('Shop Request made: ', message.content.toLowerCase());
-                let msg = message.content.toLowerCase().split(' ')
-                if(msg[0] === '!shop'){
-                    message.channel.send({embeds: [ShopInventoryEmbed]})
-                }
-                if(msg[0] === '!buy'){
-                    if(msg[1] === 'discordinvite'){
-                        if(!this.AssetController.verifyEnoughBonkle(message.author.id, '50')){
-                            message.channel.send(`Transaction failed, try being less poor and/or cringe`);
+        this.ShopkeeperBot.on('interactionCreate', interaction => {
+            if(!interaction.isCommand()) return;
+            const { commandName, options, user } = interaction;
+            console.log('Shop Request made');
+            switch(commandName){
+                case 'bal': 
+                    interaction.reply(`You have ${this.AssetController.getBonkleBalance(user.id)} Bonkle Bucks`);
+                    return;
+                case 'buy':
+                    switch(options.getString('item')!.toLowerCase()){
+                        case 'discordinvite':
+                            if(this.AssetController.verifyEnoughBonkle(user.id, 50)){
+                                let t1: Transaction = createTransaction(user.id, 'Bonkle Buck Broker', 50);
+                                let t2: Transaction = createShopTransaction(user.id, {type: 'DiscordInvite', ammount: 1});
+                                this.BlockController.addTransactionToBlock(t1);
+                                this.BlockController.addTransactionToBlock(t2);
+                                interaction.reply('Invite Purchased, You will recieve your invite on the next block');
+                            }
+                            interaction.reply('Invite Purchased, You will recieve your invite on the next block');
                             return;
-                        } 
-                        let purchasedGoods: DiscordInvite = {
-                            type: "DiscordInvite",
-                            ammount: 1
-                        }
-                        let goodsPurchased: Transaction = {
-                            reciever: message.author.id,
-                            medium: purchasedGoods,
-                            sender: 'Bonkle Buck Broker',
-                        }
-
-                        let payment: BonkleBuck = {
-                            type: 'BonkleBuck',
-                            ammount: 50
-                        }
-
-                        let goodsPayment: Transaction = {
-                            reciever: 'Bonkle Buck Broker',
-                            medium: payment,
-                            sender: message.author.id,
-                        }
-
-                        message.channel.send('Invite Purchased, You will recieve your invite on the next block');
-                        this.BlockController.addTransactionToBlock(goodsPayment);
-                        this.BlockController.addTransactionToBlock(goodsPurchased);
-                        return;
                     }
-
-                    message.channel.send(`Transaction failed, try being less poor and/or cringe`);
-                    }
-                    if(msg[1] === 'mute'){
-                        // Mute msg[2]
-                    }
-                }
-                
+                }      
         })
     }
 
     startBankerBot() {
-        this.BankerBot.on('messageCreate', async(message) => {
-            if(message.author.bot) return;
-            if(message.channelId === COCK_EXCHANGE_CHANNEL_ID){
-                if(message.content.toLowerCase() === '!cock'){
-                    message.channel.send({embeds:[StockHelpEmbed, StockTerminologyEmbed]});
-                }
-                if(message.content.toLowerCase() === '!portfolio'){
-                    let portfolio: MessageEmbed[] = this.AssetController.getStockPortfolioEmbed(message.author.id)
-                    message.channel.send({embeds: portfolio});
-                }
-                let msg = message.content.toLowerCase().split(' ');
-                if(msg.length === 2 && msg[0] === '!stock'){
-                    msg[1] = msg[1].replace('$', '');
-                    let stockValue: number = await this.getStockPrice(msg[1].replace('$', ''));
-                    message.channel.send(`$${msg[1]} is currently trading for $${stockValue}`);
-                    return;
-                }
-                if(msg[0] === '!buy'){
-                    let stockValue: number = await this.getStockPrice(msg[1].replace('$', ''));
-                    if(!this.AssetController.verifyBuyStock(message.author.id, msg[1], stockValue, msg[2])){
-                        message.channel.send('Buy order failed, not enough Bonkle Bucks');
+        this.BankerBot.on('interactionCreate', (interaction) => {
+            if(!interaction.isCommand()) return;
+            const { commandName, options, user } = interaction;
+            options
+            switch(commandName){
+                case 'sendbonkle': 
+                    if(this.AssetController.verifyEnoughBonkle(user.id, options.getNumber('Amount') || -1)){
+                        let t = this.AssetController.sendBonkle(options.getUser('Reciever')?.id || 'DEAD_WALLET', user.id, options.getNumber('Amount') || 0);
+                        this.BlockController.addTransactionToBlock(t);
+                        interaction.reply('Bonkle Sent Successfully')
                         return;
                     }
-                    let t: Trade = this.AssetController.tradeStock(message.author.id, 'BonkleBuckBanker', msg[1], stockValue, msg[2]);
-                    this.BlockController.addTransactionToBlock(t.sender);
-                    this.BlockController.addTransactionToBlock(t.reciever);
-                    message.channel.send('Buy order successfully submitted to block');
-                    return;
-                }
-
-                if(msg[0] === '!sell' && Number(msg[2]) && Number(msg[2]) > 0 ){
-                    let stockValue: number = await this.getStockPrice(msg[1].replace('$', ''));
-                    if(!this.AssetController.verifySellStock(message.author.id, msg[1], stockValue, msg[2])){
-                        message.channel.send('Sell order failed, not enough Bonkle Bucks');
-                        return;
-                    }
-                    let t: Trade = this.AssetController.tradeStock('BonkleBuckBanker', message.author.id, msg[1], stockValue, msg[2]);
-                    this.BlockController.addTransactionToBlock(t.sender);
-                    this.BlockController.addTransactionToBlock(t.reciever);
-                    message.channel.send('Buy order successfully submitted to block');
-                    return;
-                }
-
-                if(msg[0] === '!quote'){
-                    //console.log(Quo)
-                    if(!msg[1]) message.channel.send("Try doing the command right next time");
-                    let stockValue: number = await this.getStockPrice(msg[1]);
-                    message.channel.send(`$${msg[1]} is currently trading for $${stockValue}. To purchase ${msg[2]} shares, it will cost ${Number(msg[2])*stockValue+TRADING_COMMISSION} Bonkle Bucks`);
-                    return;
-                }
-
-                if(msg[0] === '!quoteoption'){
-                    let chain = await this.getOptions(msg[1]);
-                    if(!chain.isEmpty()) {
-                        message.channel.send({embeds: [chain.callsToStringEmbed(undefined), chain.putsToStringEmbed(undefined)]});
-                        return;
-                    }else{
-                        message.channel.send(`No options found for $${msg[1]}`);
-                        return;
-                    }
-                }
-                //{ name: 'How do I buy options?', value: '\`!buyOption [Stock Ticker] [Option Type] [Strike Price] [Ammount]\` You can only buy whole numbers of options'},
-                if(msg[0] === '!buyoption' && msg.length === 5){
-                    let optionChain: OptionMap = await this.getOptions(msg[1].replace('$', ''));
-                    let validTransaction = this.AssetController.verifyBuyOption(message.author.id, optionChain, msg);
-                    if(validTransaction){
-                        let t: Trade = this.AssetController.tradeOption(message.author.id, 'BonkleBuckBanker' , optionChain, msg);
-                        this.BlockController.addTransactionToBlock(t.sender);
-                        this.BlockController.addTransactionToBlock(t.reciever);
-                        message.channel.send('Buy order successfully submitted to block');
-                        return;
-                    }
-                    message.channel.send('Buy order failed, Fucko Boingo');
-                    return;
-                }
-
-                //{ name: 'How do I buy options?', value: '\`!buyOption [Stock Ticker] [Option Type] [Strike Price] [Ammount]\` You can only buy whole numbers of options'},
-                if(msg[0] === '!selloption' && msg.length === 5){
-                    let optionChain: OptionMap = await this.getOptions(msg[1].replace('$', ''));
-                    let validTransaction = this.AssetController.verifySellOption(message.author.id, optionChain, msg);
-                    if(validTransaction){
-                        let t: Trade = this.AssetController.tradeOption('BonkleBuckBanker', message.author.id, optionChain, msg);
-                        this.BlockController.addTransactionToBlock(t.sender);
-                        this.BlockController.addTransactionToBlock(t.reciever);
-                        message.channel.send('Sell order successfully submitted to block');
-                    }
-                    message.channel.send('Sell order failed, Fucko Boingo');
-                }
-            }  
-        })
+                    break;
+            }
+        })  
     }
 
     sellOption(msg: string[], initiatorID: string, transactionDelta: number) {
@@ -284,34 +195,7 @@ export class MainController{
 
     
     buyOption(msg: string[], initiatorID: string, totalCost: number) {
-        
-        let optionMedium: Option = {
-            ticker: `$${msg[1].replace('$', '')}`,
-            type: 'Option',
-            contracts: Number(msg[4]),
-            strike: Number(msg[3]),
-            expiration: Date.now(),
-            option: 'Calls'
-        }
-        if(msg[2] == 'put') optionMedium.option = 'Puts';
 
-        let stockTransaction: Transaction = {
-            sender: 'BonkleBuckBanker',
-            reciever: initiatorID,
-            medium: optionMedium
-        }
-
-        let bonkleBuckMedium: BonkleBuck = {
-            type: 'BonkleBuck',
-            ammount: totalCost+STOCK_TRANSACTION_FEE
-        }
-        let bonkleBuckTransaction: Transaction = {
-            sender: initiatorID,
-            reciever: 'BonkleBuckBanker',
-            medium: bonkleBuckMedium
-        }
-        this.BlockController.addTransactionToBlock(stockTransaction);
-        this.BlockController.addTransactionToBlock(bonkleBuckTransaction);
     }
 
     async getStockPrice(ticker: string): Promise<number> {
@@ -428,65 +312,6 @@ export class MainController{
                 console.log('Exiting out of listener')
                 return;
             }
-
-            if(message.channelId === BAAZAR_CHANNEL_ID){
-                let msg = message.content.toLowerCase();
-                if(msg === '!bal'){
-                    message.channel.send(`Your balance is ${this.AssetController.getBonkleBalance(message.author.id)} Bonkle Bucks`)
-                }
-
-                if(msg === '!supply'){
-                    message.channel.send(`There are ${-this.AssetController.getBonkleBalance('BLOCK_REWARD')} Bonkle Bucks distributed in rewards\n\nThere are ${-this.AssetController.getBonkleBalance('COCKSINO')} Bonkle Bucks generated from the Cock-sino\n\nThere are ${-this.AssetController.getBonkleBalance('BonkleBuckBanker')} Bonkle Bucks generated from the markets and item sales\n\nThe circulating supply of Bonkle Bucks is ${-this.AssetController.getBonkleBalance('BLOCK_REWARD')-this.AssetController.getBonkleBalance('COCKSINO')-this.AssetController.getBonkleBalance('BonkleBuckBanker')}`);
-                }
-
-                if(msg === '!help'){
-                    let invokeBalance = this.AssetController.getBonkleBalance(message.author.id);
-                    if(invokeBalance > 0){
-                        message.channel.send('Thank you for helping out the community by donating everyone an equal share of your current sum of bonkle bucks.');
-                        this.AssetController.verifyEnoughBonkle(message.author.id, invokeBalance + '');
-
-                        let users = this.AssetController.getEconParticipants();
-                        let sharedAmmount = invokeBalance / users.length;
-                        let authorIndex = users.indexOf(message.author.id);
-                        let BloccoIndex = users.indexOf('Blocco');
-                        users.splice(authorIndex, 1);
-                        users.splice(BloccoIndex, 1);
-                        let medium: BonkleBuck = {
-                            ammount: sharedAmmount,
-                            type: "BonkleBuck"
-                        };
-                        users.forEach(user => {
-                            let t: Transaction = {
-                                reciever: user,
-                                medium,
-                                sender: message.author.id,
-                            }
-                            this.BlockController.addTransactionToBlock(t);
-                        })
-
-                    }else{
-                        message.channel.send({embeds:[HelpEmbed]});
-                    }
-                    
-                }
-
-                if(msg.includes('!send')){
-                    let msgArr = msg.split(' ');
-                    
-                    if(msgArr.length === 4)
-                    if(msgArr[2] === 'bonkle'){
-                        let valid = this.AssetController.verifyEnoughBonkle(message.author.id, msgArr[3]);
-                        if(valid){
-                            console.log()
-                            let t = this.AssetController.sendBonkle(msgArr[1], message.author.id, msgArr[3]);
-                            this.BlockController.addTransactionToBlock(t);
-                            message.channel.send(`Transaction successful`);
-                            return; 
-                        }
-                    }
-                    message.channel.send(`Transaction failed, try being less poor and/or cringe`);
-                }
-            }
         })
     }
 
@@ -512,8 +337,11 @@ export class MainController{
 
         await banker;
         console.log('Banker Logged in successfully');
-
+//
         await shop;
+        console.log('Shopkeeper Logged in successfully');
+
+        await bandit;
         console.log('Shopkeeper Logged in successfully');
         
         console.log('Getting Network Blocks');
