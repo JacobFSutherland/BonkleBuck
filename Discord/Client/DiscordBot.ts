@@ -40,6 +40,114 @@ Banker.once('ready', ()=>{
             }
         ]
     })
+
+    commands?.create({
+        name: 'buystock',
+        description: 'Buy Stocks with Bonkle Bucks',
+        options: [
+            {
+                name: 'ticker',
+                description: 'The ticker of the stock you intend to purchase',
+                required: true,
+                type: Constants.ApplicationCommandOptionTypes.STRING
+            },
+            {
+                name: 'quantity',
+                description: 'The quantity of the stock you intend to purchase',
+                required: true,
+                type: Constants.ApplicationCommandOptionTypes.NUMBER 
+            }
+        ]
+    })
+
+    commands?.create({
+        name: 'sellstock',
+        description: 'Buy Bonkle Bucks with Stocks',
+        options: [
+            {
+                name: 'ticker',
+                description: 'The ticker of the stock you intend to sell',
+                required: true,
+                type: Constants.ApplicationCommandOptionTypes.STRING
+            },
+            {
+                name: 'quantity',
+                description: 'The quantity of the stock you intend to sell',
+                required: true,
+                type: Constants.ApplicationCommandOptionTypes.NUMBER 
+            }
+        ]
+    })
+
+    commands?.create({
+        name: 'buyoption',
+        description: 'Buy option contracts with bonkle bucks',
+        options: [
+            {   
+                name: 'ticker',
+                description: 'The ticker of the stock you wish to buy options for',
+                required: true,
+                type: Constants.ApplicationCommandOptionTypes.STRING,
+            },
+            {
+                name: 'option_type',
+                description: 'The type of option you wish to buy',
+                type: Constants.ApplicationCommandOptionTypes.STRING,
+                required: true,
+                choices:[
+                    {name: 'Calls', value: 'Calls'},
+                    {name: 'Puts', value: 'Puts'},
+                ]
+            },
+            {
+                name: 'option_strike',
+                description: 'The strike price of the option you wish to buy',
+                type: Constants.ApplicationCommandOptionTypes.NUMBER,
+                required: true,
+            },
+            {
+                name: 'option_quantity',
+                description: 'The quantity of options you wish to buy',
+                type: Constants.ApplicationCommandOptionTypes.NUMBER,
+                required: true,
+            },
+        ]
+    })
+
+    commands?.create({
+        name: 'selloption',
+        description: 'Sell option contracts with bonkle bucks',
+        options: [
+            {   
+                name: 'ticker',
+                description: 'The ticker of the stock you wish to sell options for',
+                required: true,
+                type: Constants.ApplicationCommandOptionTypes.STRING,
+            },
+            {
+                name: 'option_type',
+                description: 'The type of option you wish to sell',
+                type: Constants.ApplicationCommandOptionTypes.STRING,
+                required: true,
+                choices:[
+                    {name: 'Calls', value: 'Calls'},
+                    {name: 'Puts', value: 'Puts'},
+                ]
+            },
+            {
+                name: 'option_strike',
+                description: 'The strike price of the option you wish to sell',
+                type: Constants.ApplicationCommandOptionTypes.NUMBER,
+                required: true,
+            },
+            {
+                name: 'option_quantity',
+                description: 'The quantity of options you wish to sell',
+                type: Constants.ApplicationCommandOptionTypes.NUMBER,
+                required: true,
+            },
+        ]
+    })
 })
 
 Shopkeeper.once('ready', () => {

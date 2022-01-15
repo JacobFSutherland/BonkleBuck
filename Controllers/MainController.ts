@@ -2,7 +2,7 @@ import { AnyChannel, Channel, Client, Collection, FetchChannelOptions, Message, 
 import { parse } from 'node-html-parser';
 import got from "got/dist/source";
 import { CockChain, Banker, Shopkeeper, Bandit, BanditEmbed, ShopInventoryEmbed, StockHelpEmbed, StockTerminologyEmbed, HelpEmbed } from "../Discord/Client";
-import { BlockGuess, Transaction, BonkleBuck, NFT, Stock, Option, DiscordInvite, OptionTable, OptionMap, OptionStat, OptionValue, Trade, createShopTransaction, createTransaction } from "../models";
+import { BlockGuess, Transaction, BonkleBuck, NFT, Stock, Option, DiscordInvite, OptionTable, OptionMap, OptionStat, OptionValue, Trade, createShopTransaction, createTransaction, getOptions, getStockPrice } from "../models";
 import { BlockController } from "./"; 
 import { BLOCK_CHANNEL_ID, BANDIT_TOKEN, COCKSINO_CHANNEL_ID, SEXY_BONKLES_GUILD_ID, COCK_SERVER_CHANNEL_ID, MINING_CHANNEL_ID, BAAZAR_CHANNEL_ID, COCK_EXCHANGE_CHANNEL_ID, STOCK_TRANSACTION_FEE, COCKCHAIN_TOKEN, BANKER_TOKEN, BLOCK_REWARD, BLOCK_TIME, SHOPKEEPER_TOKEN, TRADING_COMMISSION } from '../env'
 import { AssetController } from "./AssetController";
@@ -21,6 +21,7 @@ let shop = Shopkeeper.login(SHOPKEEPER_TOKEN);
 console.log('Bandit Logging in');
 let bandit = Bandit.login(BANDIT_TOKEN);
 
+let gambleOdds = Math.random();
 
 export class MainController{
     private AssetController: AssetController;
@@ -60,23 +61,25 @@ export class MainController{
             switch(commandName){
                 case 'flip':
                     console.log('In flip');
-                    if(this.AssetController.verifyEnoughBonkle(user.id, options.getNumber('wager') || -1)){
+                    if(this.AssetController.verifyEnoughBonkle(user.id, options.getNumber('wager')!)){
                         console.log('Addict has buck');
-                        if(Math.random() < 0.5){
+                        if(gambleOdds < 0.5){
                             // win
                             console.log('Addict has won');
+                            this.AssetController.addBonkleDelta(user.id, options.getNumber('wager')!);
                             let t = createTransaction('COCKSINO', interaction.user.id, options.getNumber('wager')!);
                             this.BlockController.addTransactionToBlock(t);
                             interaction.reply(`Unfortunate Outcome! You won ${options.getNumber('wager')!} Bonkle Bucks!`)
-                            return;
                         }else{
                             // lose
                             console.log('Addict has lost');
                             let t = createTransaction(interaction.user.id, 'COCKSINO', options.getNumber('wager')!);
                             this.BlockController.addTransactionToBlock(t);
-                            interaction.reply(`Congradulations! You lost ${options.getNumber('wager')!} Bonkle Bucks!`)
-                            return;
+                            interaction.reply(`Congradulations! You lost ${options.getNumber('wager')!} Bonkle Bucks!`)  
                         }
+                        gambleOdds = Math.random()
+                        console.log('Odds: ', gambleOdds);
+                        return;
                     }
                     interaction.reply(`Go mine some blocks you poor`)
                     return;
@@ -84,35 +87,38 @@ export class MainController{
                     if(this.AssetController.verifyEnoughBonkle(user.id, options.getNumber('wager') || -1)){
                         let odds = options.getString('odds')?.split(':');
                         if(!odds || odds.length !== 2 || !Number(odds[0]) || !Number(odds[1])) return; // odds error
-                        if(Math.random() < Number(odds[0])/(Number(odds[0])+Number(odds[1]))){
-                            let t = createTransaction('COCKSINO', interaction.user.id, (Number(odds[0])+Number(odds[1])));
+                        if(gambleOdds > Number(odds[0])/(Number(odds[0])+Number(odds[1]))){
+                            this.AssetController.addBonkleDelta(user.id, options.getNumber('wager')!);
+                            let t = createTransaction('COCKSINO', interaction.user.id, options.getNumber('wager')!*(Number(odds[0])/Number(odds[1])));
                             this.BlockController.addTransactionToBlock(t);
-                            interaction.reply(`Unfortunate Outcome! You gained ${(Number(odds[0])+Number(odds[1]))} Bonkle Bucks!`)
-                            return;
+                            interaction.reply(`Unfortunate Outcome! You gained ${options.getNumber('wager')!*(Number(odds[0])/Number(odds[1]))} Bonkle Bucks!`)
                             // win
                         }else{
                             // lose
                             let t = createTransaction(interaction.user.id, 'COCKSINO', options.getNumber('wager')!);
                             this.BlockController.addTransactionToBlock(t);
                             interaction.reply(`Congradulations! You lost ${options.getNumber('wager')!} Bonkle Bucks!`)
-                            return;
                         }
+                        gambleOdds = Math.random()
+                        console.log('Odds: ', gambleOdds);
+                        return;
                     }
                     interaction.reply(`Go mine some blocks you poor`)
                     return;
                 case 'dangerflip':
-                    if(Math.random() < 0.5){
+                    if(gambleOdds < 0.5){
                         interaction.reply('Congradulations! you got kicked!');
                         sleep(3000).then(()=>{
                             Bandit.guilds.cache.get(SEXY_BONKLES_GUILD_ID)?.members.kick(interaction.user);
                         })
-                        return;
                     }else{
                         let t = createTransaction( 'COCKSINO', interaction.user.id, 50);
                         this.BlockController.addTransactionToBlock(t);
                         interaction.reply(`Unfortunate Outcome! You gained 50 Bonkle Bucks!`)
-                        return;
                     }
+                    gambleOdds = Math.random()
+                    console.log('Odds: ', gambleOdds);
+                    return;
                 default: 
                     interaction.reply('cum cum cum cum cum');
                     return;
@@ -147,147 +153,102 @@ export class MainController{
     }
 
     startBankerBot() {
-        this.BankerBot.on('interactionCreate', (interaction) => {
+        this.BankerBot.on('interactionCreate', async (interaction) => {
             if(!interaction.isCommand()) return;
             const { commandName, options, user } = interaction;
-            options
+            let ticker: string;
+            let optionType: 'Puts' | 'Calls' ;
+            let optionChain: OptionMap;
+            let strike: number;
+            let optionCost: number;
+            let optionPrice: number;
+            let stockPrice: number;
+            let quantity: number;
+            let cost: number;
             switch(commandName){
                 case 'sendbonkle': 
-                    if(this.AssetController.verifyEnoughBonkle(user.id, options.getNumber('Amount') || -1)){
-                        let t = this.AssetController.sendBonkle(options.getUser('Reciever')?.id || 'DEAD_WALLET', user.id, options.getNumber('Amount') || 0);
+                    console.log(`user id: ${user.id}`)
+                    if(this.AssetController.verifyEnoughBonkle(user.id, options.getNumber('amount') || -1)){
+                        let t = this.AssetController.sendBonkle(options.getUser('reciever')?.id || 'DEAD_WALLET', user.id, options.getNumber('amount') || 0);
                         this.BlockController.addTransactionToBlock(t);
                         interaction.reply('Bonkle Sent Successfully')
                         return;
                     }
-                    break;
-            }
+                    interaction.reply('Bonkle not sent Successfully')
+                    return;
+            
+                case 'buyoption': 
+                    ticker = options.getString('ticker')!.replace('$', '');
+                    optionChain = await getOptions(options.getString('ticker')!.replace('$', ''));
+                    optionType = options.getString('option_type') as 'Calls' | 'Puts';
+                    strike = options.getNumber('option_strike')!;
+                    optionPrice = optionChain[optionType][strike].ask;
+                    quantity = options.getNumber('option_quantity')!;
+                    optionCost = quantity * optionPrice * 100 + TRADING_COMMISSION;
+                    if(this.AssetController.verifyEnoughBonkle(user.id, optionCost) && quantity > 0 && Number.isInteger(quantity) ){
+                        let T: Trade = this.AssetController.tradeOption(user.id, 'Bonkle Buck Broker', ticker, optionType, strike, options.getNumber('option_quantity')!, optionCost);
+                        this.BlockController.addTransactionToBlock(T.reciever);
+                        this.BlockController.addTransactionToBlock(T.sender);
+                        interaction.reply('Options not bought successfully')
+                        return;
+                    }
+                    return;
+
+                case 'selloption': 
+                    ticker = options.getString('ticker')!.replace('$', '');
+                    optionChain = await getOptions(options.getString('ticker')!.replace('$', ''));
+                    optionType = options.getString('option_type') as 'Calls' | 'Puts';
+                    strike = options.getNumber('option_strike')!;
+                    quantity = options.getNumber('option_quantity')!;
+                    console.log(optionChain);
+                    console.log('Option type: ', optionType);
+                    console.log('Strike: ', strike);
+                    optionPrice = optionChain[optionType][strike].ask;
+                    optionCost = quantity * optionPrice * 100 - TRADING_COMMISSION;
+                    let totalOptions = this.AssetController.getOptions(user.id, ticker, optionType, strike )
+                    if(totalOptions <= quantity && optionCost > 0 && quantity > 0 && Number.isInteger(quantity)){
+                        let T: Trade = this.AssetController.tradeOption('Bonkle Buck Broker', user.id, ticker, optionType, strike, options.getNumber('option_quantity')!, optionCost);
+                        this.BlockController.addTransactionToBlock(T.reciever);
+                        this.BlockController.addTransactionToBlock(T.sender);
+                        interaction.reply('Options sold successfully')
+                        return;
+                    }
+                    interaction.reply('Options not sold successfully')
+                    return;
+                
+                case 'buystock':
+                    ticker = options.getString('ticker')!.replace('$', '')!;
+                    stockPrice = await getStockPrice(ticker);
+                    quantity = options.getNumber('quantity')!;
+                    cost = stockPrice * quantity + TRADING_COMMISSION;
+                    if(this.AssetController.verifyEnoughBonkle(user.id, cost) && quantity > 0 && Number.isInteger(quantity)){
+                        let T: Trade = this.AssetController.tradeStock(user.id, 'Bonkle Buck Broker', ticker, stockPrice, quantity);
+                        this.BlockController.addTransactionToBlock(T.reciever);
+                        this.BlockController.addTransactionToBlock(T.sender);
+                        interaction.reply('Stocks bought successfully')
+                        return;
+                    }
+                    interaction.reply('Stocks not bought successfully')
+                    return;
+
+                case 'sellstock':
+                    ticker = options.getString('ticker')!.replace('$', '')!;
+                    stockPrice = await getStockPrice(ticker);
+                    quantity = options.getNumber('quantity')!;
+                    cost = stockPrice * quantity - TRADING_COMMISSION;
+                    if( this.AssetController.getStocks(user.id, ticker, quantity) && quantity > 0 && Number.isInteger(quantity)){
+                        let T: Trade = this.AssetController.tradeStock(user.id, 'Bonkle Buck Broker', ticker, stockPrice, quantity);
+                        this.BlockController.addTransactionToBlock(T.reciever);
+                        this.BlockController.addTransactionToBlock(T.sender);
+                        interaction.reply('Stocks bought successfully')
+                        return;
+                    }
+                    interaction.reply('Stocks not bought successfully')
+                    return;
+            } 
+        
         })  
-    }
-
-    sellOption(msg: string[], initiatorID: string, transactionDelta: number) {
-        let optionMedium: Option = {
-            ticker: `$${msg[1].replace('$', '')}`,
-            type: 'Option',
-            contracts: Number(msg[4]),
-            strike: Number(msg[3]),
-            expiration: Date.now(),
-            option: 'Calls'
-        }
-        if(msg[2] == 'put') optionMedium.option = 'Puts';
-
-        let stockTransaction: Transaction = {
-            sender: initiatorID,
-            reciever: 'BonkleBuckBanker',
-            medium: optionMedium
-        }
-        let bonkleBuckMedium: BonkleBuck = {
-            type: 'BonkleBuck',
-            ammount: transactionDelta-STOCK_TRANSACTION_FEE
-        }
-        let bonkleBuckTransaction: Transaction = {
-            sender: 'BonkleBuckBanker',
-            reciever: initiatorID,
-            medium: bonkleBuckMedium
-        }
-        this.BlockController.addTransactionToBlock(stockTransaction);
-        this.BlockController.addTransactionToBlock(bonkleBuckTransaction);
-    }
-
-    
-    buyOption(msg: string[], initiatorID: string, totalCost: number) {
-
-    }
-
-    async getStockPrice(ticker: string): Promise<number> {
-        try{
-            let res = await got({
-                'method': 'GET',
-                'url': `https://finance.yahoo.com/quote/${ticker}/`,
-                'headers': {
-                  'pragma': 'no-cache',
-                  'cache-control': 'no-cache',
-                  'sec-ch-ua': '"Google Chrome";v="93", " Not;A Brand";v="99", "Chromium";v="93"',
-                  'dnt': '1',
-                  'sec-ch-ua-mobile': '?0',
-                  'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 Safari/537.36',
-                  'sec-ch-ua-platform': '"Windows"',
-                  'accept': '*/*',
-                  'sec-fetch-site': 'same-origin',
-                  'sec-fetch-mode': 'cors',
-                  'sec-fetch-dest': 'empty',
-                  'accept-language': 'en-US,en;q=0.9,ja-JP;q=0.8,ja;q=0.7,zh-TW;q=0.6,zh;q=0.5',
-                }
-            });
-            let html = parse(res.body);
-            //document.querySelectorAll('#quote-header-info')[0].children[2].children[0].children[0].children[0].innerText
-            let price = html.querySelectorAll('#quote-header-info')[0].childNodes[2].childNodes[0].childNodes[0].childNodes[0].innerText.replace(/,/g, '')
-            console.log(price);
-            return Number(price);
-
-        }catch(e){
-            console.log(e);
-            console.log('Stock Error');
-            return 0;
-        }
-    }
-
-    async getOptions(ticker: string): Promise<OptionMap> {
-        try{
-            let res = await got({
-                'method': 'GET',
-                'url': `https://finance.yahoo.com/quote/${ticker}/options`,
-                'headers': {
-                  'pragma': 'no-cache',
-                  'cache-control': 'no-cache',
-                  'sec-ch-ua': '"Google Chrome";v="93", " Not;A Brand";v="99", "Chromium";v="93"',
-                  'dnt': '1',
-                  'sec-ch-ua-mobile': '?0',
-                  'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 Safari/537.36',
-                  'sec-ch-ua-platform': '"Windows"',
-                  'accept': '*/*',
-                  'sec-fetch-site': 'same-origin',
-                  'sec-fetch-mode': 'cors',
-                  'sec-fetch-dest': 'empty',
-                  'accept-language': 'en-US,en;q=0.9,ja-JP;q=0.8,ja;q=0.7,zh-TW;q=0.6,zh;q=0.5',
-                }
-            });
-            let html = parse(res.body);
-            let price = html.querySelectorAll('#quote-header-info')[0].childNodes[2].childNodes[0].childNodes[0].childNodes[0].innerText.replace(/,/g, '');
-            let optionMap: OptionMap = new OptionMap(Number(price));
-            //document.querySelectorAll('#quote-header-info')[0].children[2].children[0].children[0].children[0].innerText
-            console.log('Scraping Calls and Puts');
-            console.log(html.querySelectorAll('tbody').length);
-            let calls = html.querySelectorAll('tbody')[0].childNodes;
-            let puts = html.querySelectorAll('tbody')[1].childNodes;
-            console.log('Scraped Calls and Puts');
-            let callTable: OptionTable = {};
-            let putTable: OptionTable = {}
-            console.log('Inserting Calls into Table');
-            calls.forEach(option => {
-                let optionStat: OptionStat = {
-                    bid: Number(option.childNodes[4].innerText.replace(/,/g, '')),
-                    ask: Number(option.childNodes[5].innerText.replace(/,/g, ''))
-                }
-                callTable[Number(option.childNodes[2].innerText.replace(/,/g, ''))] = optionStat;
-            });
-            console.log('Inserting Puts into Table');
-            puts.forEach(option => {
-                let optionStat: OptionStat = {
-                    bid: Number(option.childNodes[4].innerText.replace(/,/g, '')),
-                    ask: Number(option.childNodes[5].innerText.replace(/,/g, ''))
-                }
-                putTable[Number(option.childNodes[2].innerText.replace(/,/g, ''))] = optionStat;
-            });
-            optionMap.Calls = callTable;
-            optionMap.Puts = putTable;
-            return optionMap;
-        }catch(e){
-            console.log(e);
-            console.log('Option Error');
-            return new OptionMap(0);
-        }
-    }
-    
+    }    
 
     startBlockChainBot() {
         this.BlockchainBot.on('messageCreate', (message) => {

@@ -32,52 +32,40 @@ export class AssetController {
     }
 
     syncTransaction(t: Transaction, fullSync: boolean): boolean{
-        if(t.medium.type === 'BonkleBuck'){
-            this.currentBalances[t.reciever] = (this.currentBalances[t.reciever]) ? this.currentBalances[t.reciever] += t.medium.ammount : t.medium.ammount;
-            if(fullSync) this.currentBalances[t.sender] = (this.currentBalances[t.sender])? this.currentBalances[t.sender]-=t.medium.ammount : -t.medium.ammount;
-        }else if(t.medium.type === 'Stock'){
-            if(!this.currentStocks[t.reciever]){
-                this.currentStocks[t.reciever] = {};
-            }
-            if(!this.currentStocks[t.reciever][t.medium.ticker]){
-                this.currentStocks[t.reciever][t.medium.ticker] = 0;
-            }
-            console.log(`adding ${t.medium.ammount} to ${t.medium.ticker} for ${t.reciever}`)
-            this.currentStocks[t.reciever][t.medium.ticker] += Number(t.medium.ammount);
-            console.log(`${t.reciever} now has ${this.currentStocks[t.reciever][t.medium.ticker]} ${t.medium.ticker}`)
-
-            if(fullSync) {
-                if(!this.currentStocks[t.sender]){
-                    this.currentStocks[t.sender] = {};
+        let type = t.medium.type;
+        switch(type){
+            case 'BonkleBuck':
+                let m = t.medium as BonkleBuck;
+                this.addBonkleDelta(t.reciever, m.ammount)
+                if(fullSync){
+                    this.addBonkleDelta(t.sender, -m.ammount);
+                } 
+                return false;
+            case 'DiscordInvite':
+                this.addBonkleDelta(t.sender, -50);
+                return !fullSync;
+            case 'Stock':
+                let s = t.medium as Stock;
+                this.addStockDelta(t.reciever, s.ticker, s.ammount);
+                if(fullSync){
+                    this.addStockDelta(t.sender, s.ticker, -s.ammount);
                 }
-                if(!this.currentStocks[t.sender][t.medium.ticker]){
-                    this.currentStocks[t.sender][t.medium.ticker] = 0;
+                return true;
+
+            case 'Option':
+                let o = t.medium as Option;
+                this.addOptions(t.reciever, o);
+                if(fullSync){
+                    this.removeOptions(t.sender, o);
                 }
-                console.log(`removing ${t.medium.ammount} from ${t.medium.ticker} for ${t.sender}`)
-                this.currentStocks[t.sender][t.medium.ticker] -= Number(t.medium.ammount);
-                console.log(`${t.sender} now has ${this.currentStocks[t.sender][t.medium.ticker]} ${t.medium.ticker} left`)
-            }
-        }else if(t.medium.type === 'DiscordInvite' || t.medium.type === 'Mute'){
-            return !fullSync;
-
-        }else if(t.medium.type === 'Option'){
-            if(!this.currentOptions[t.reciever]) this.currentOptions[t.reciever] = {};
-            if(!this.currentOptions[t.reciever][t.medium.ticker]) this.currentOptions[t.reciever][t.medium.ticker] = [];
-            if(!this.currentOptions[t.reciever][t.medium.ticker][t.medium.strike]) this.currentOptions[t.reciever][t.medium.ticker][t.medium.strike] = {Calls: 0, Puts: 0};
-            this.currentOptions[t.reciever][t.medium.ticker][t.medium.strike][t.medium.option] += t.medium.contracts;
-            console.log(`${t.reciever} now has ${this.currentOptions[t.reciever][t.medium.ticker][t.medium.strike][t.medium.option]} ${t.medium.ticker} options at the ${t.medium.strike} strike`)
-
-            if(fullSync) {
-                if(!this.currentOptions[t.sender]) this.currentOptions[t.sender] = {};
-                if(!this.currentOptions[t.sender][t.medium.ticker]) this.currentOptions[t.sender][t.medium.ticker] = [];
-                if(!this.currentOptions[t.sender][t.medium.ticker][t.medium.strike]) this.currentOptions[t.sender][t.medium.ticker][t.medium.strike] = {Calls: 0, Puts: 0};
-                this.currentOptions[t.sender][t.medium.ticker][t.medium.strike][t.medium.option] -= t.medium.contracts;
-                console.log(`${t.sender} now has ${this.currentOptions[t.sender][t.medium.ticker][t.medium.strike][t.medium.option]} ${t.medium.ticker} options at the ${t.medium.strike} strike`)
-            }
+                return false;
+            case 'Mute':
+                return false;
+            case 'NFT':
+                return false;
         }
-        return false;
-
     }
+
 
     verifyEnoughBonkle(discordID: string, bucks: number): Boolean {
         if(!this.currentBalances[discordID]){
@@ -106,18 +94,41 @@ export class AssetController {
         return t;
     }
 
-    returnFrozenAssets(discordID: string, bucks: string): void {
-        this.currentBalances[discordID] += Number(bucks);
+    addBonkleDelta(discordID: string, bucks: number): void {
+        if(!this.currentBalances[discordID]) this.currentBalances[discordID] = 0
+        this.currentBalances[discordID] += bucks;
     }
 
-    freezeAssets(discordID: string, bucks: string): void {
-        this.currentBalances[discordID] -= Number(bucks);
+    addStockDelta(discordID: string, ticker: string, ammount: number){
+        if(!this.currentStocks[discordID]) this.currentStocks[discordID] = {};
+        if(!this.currentStocks[discordID][ticker]) this.currentStocks[discordID][ticker] = 0;
+        this.currentStocks[discordID][ticker] += ammount;
+    }
+
+    addOptions(discordID: string, o: Option){
+        if(!this.currentOptions[discordID]) this.currentOptions[discordID] = {};
+        if(!this.currentOptions[discordID][o.ticker]) this.currentOptions[discordID][o.ticker] = [];
+        if(!this.currentOptions[discordID][o.ticker][o.strike]) this.currentOptions[discordID][o.ticker][o.strike] = {Calls: 0, Puts: 0};
+        this.currentOptions[discordID][o.ticker][o.strike][o.option] += o.contracts;
+    }
+
+    removeOptions(discordID: string, o: Option){
+        if(!this.currentOptions[discordID]) this.currentOptions[discordID] = {};
+        if(!this.currentOptions[discordID][o.ticker]) this.currentOptions[discordID][o.ticker] = [];
+        if(!this.currentOptions[discordID][o.ticker][o.strike]) this.currentOptions[discordID][o.ticker][o.strike] = {Calls: 0, Puts: 0};
+        this.currentOptions[discordID][o.ticker][o.strike][o.option] -= o.contracts;
     }
 
     /*
         Verification Functions
     */
     
+    getStocks(id: string, ticker: string, quantity: number): number {
+        if(!this.currentStocks[id]) this.currentStocks[id] = {};
+        if(!this.currentStocks[id][ticker]) this.currentStocks[id][ticker] = 0;
+        return this.currentStocks[id][ticker];
+    }
+
     verifyBuyStock(discordID: string, ticker: string, stockPrice: number, quantity: string): Boolean {
         if(!validPositiveInteger(quantity) && !validPositiveInteger(stockPrice+'')) return false;
         let totalCost = (Number(quantity) * stockPrice + TRADING_COMMISSION);
@@ -148,51 +159,21 @@ export class AssetController {
         return (totalCost > 0);
     }
 
-    verifyBuyOption(discordID: string, optionChain: OptionMap, input: string[]): Boolean {
-        let type: 'Calls' | 'Puts' | undefined = (input[2].indexOf('call') != -1)? 
-            'Calls': (input[2].indexOf('put') != -1)? 
-            'Puts': undefined;
-        if(type === undefined || optionChain.isEmpty() || !validPositiveInteger(input[4])) return false;
-        console.log('Trying to buy ', type);
-        let contracts = Number(input[4]);
-        let strike = Number(input[3]);
-        let optionPrice = optionChain[type][strike].ask;
-        if(!Number(contracts) && optionPrice <= 0) return false;
-        let totalCost = (optionPrice * Number(contracts) * 100 + TRADING_COMMISSION);
-        console.log(`Total cost: ${totalCost}`);
-        return this.verifyEnoughBonkle(discordID, totalCost);
-    }
-    
-
-    verifySellOption(discordID: string, optionChain: OptionMap, input: string[]): Boolean {
-        let type: 'Calls' | 'Puts' | undefined = (input[2].indexOf('call') != -1)? 
-        'Calls': (input[2].indexOf('put') != -1)? 
-        'Puts': undefined;
-        if(type === undefined || !Number(input[4]) || optionChain.isEmpty() ||
-            !Number(input[3]) || validPositiveInteger(input[4])) return false;
-
-        let contracts = Number(input[4]);
-        let strike = Number(input[3]);
-        let optionPrice = optionChain[type][strike].ask;
-        if(!Number(contracts) && optionPrice <= 0) return false;
-        let totalCost = (optionPrice * Number(contracts) * 100 - TRADING_COMMISSION);
-        return (totalCost > 0);
-    }
-
-
     /*
         End of Verification Functions
     */
 
-    tradeStock(buyer: string, seller: string, ticker: string, stockPrice: number, quantity: string): Trade {
+    tradeStock(buyer: string, seller: string, ticker: string, stockPrice: number, quantity: number): Trade {
         let stockCost = Number(quantity)*stockPrice;
         let commission = (Number(buyer))? TRADING_COMMISSION: -TRADING_COMMISSION;
+        this.getStocks(seller, ticker, quantity);
+        this.currentStocks[buyer][ticker] -= quantity;
         console.log(stockCost);
         console.log(commission);
         let stockMedium: Stock = {
             ticker: `$${ticker}`,
             type: 'Stock',
-            ammount: Number(quantity)
+            ammount: quantity,
         }
         let stockTransaction: Transaction = {
             sender: seller,
@@ -219,25 +200,21 @@ export class AssetController {
     Start of Trades
     */
 
-    tradeOption(buyer: string, seller: string, optionChain: OptionMap, input: string[]): Trade {
-        let option: 'Calls' | 'Puts' = (input[2].indexOf('call') != -1)? 
-        'Calls': 'Puts'
-        let ticker = input[1].replace('$', '');
-        let contracts = Number(input[4]);
-        let strike = Number(input[3]);
-        let optionPrice = optionChain[option][strike].ask;
-        let comission = (Number(buyer))? TRADING_COMMISSION: -TRADING_COMMISSION;
+    tradeOption(buyer: string, seller: string, ticker: string, optionType: 'Puts' | 'Calls', strike: number, contracts: number, cost: number): Trade {
+
+        this.getOptions(seller, ticker, optionType, strike);
+        this.currentOptions[seller][ticker][strike][optionType] -= contracts;
         let optionMedium: Option = {
             ticker: `$${ticker}`,
             type: 'Option',
-            option,
-            strike: strike,
+            option: optionType,
+            strike,
             contracts,
             expiration: 0,
         }
         let bonkleBuckMedium: BonkleBuck = {
             type: 'BonkleBuck',
-            ammount: optionPrice*100*Number(contracts) + comission,
+            ammount: cost
         }
 
         let optionTransaction: Transaction = {
@@ -261,6 +238,13 @@ export class AssetController {
     /*
     End of Trades
     */
+
+    getOptions(id: string, ticker: string, optionType: 'Puts' | 'Calls', strike: number): number {
+        if(!this.currentOptions[id]) this.currentOptions[id] = {};
+        if(!this.currentOptions[id][ticker]) this.currentOptions[id][ticker] = {};
+        if(!this.currentOptions[id][ticker][strike]) this.currentOptions[id][ticker][strike] = {Puts: 0, Calls: 0};
+        return this.currentOptions[id][ticker][strike][optionType];
+    }
 
 
     getStockPortfolioEmbed(id: string): MessageEmbed[] {
