@@ -123,9 +123,10 @@ export class AssetController {
         Verification Functions
     */
     
-    getStocks(id: string, ticker: string, quantity: number): number {
+    initStocks(id: string, ticker: string): number {
         if(!this.currentStocks[id]) this.currentStocks[id] = {};
         if(!this.currentStocks[id][ticker]) this.currentStocks[id][ticker] = 0;
+        console.log(`this.currentStocks[${id}][${ticker}] = ${this.currentStocks[id][ticker]}`);
         return this.currentStocks[id][ticker];
     }
 
@@ -166,7 +167,8 @@ export class AssetController {
     tradeStock(buyer: string, seller: string, ticker: string, stockPrice: number, quantity: number): Trade {
         let stockCost = Number(quantity)*stockPrice;
         let commission = (Number(buyer))? TRADING_COMMISSION: -TRADING_COMMISSION;
-        this.getStocks(seller, ticker, quantity);
+        this.initStocks(seller, ticker);
+        this.initStocks(buyer, ticker);
         this.currentStocks[buyer][ticker] -= quantity;
         console.log(stockCost);
         console.log(commission);

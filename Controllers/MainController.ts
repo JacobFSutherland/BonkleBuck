@@ -77,8 +77,8 @@ export class MainController{
                             this.BlockController.addTransactionToBlock(t);
                             interaction.reply(`Congradulations! You lost ${options.getNumber('wager')!} Bonkle Bucks!`)  
                         }
-                        gambleOdds = Math.random()
                         console.log('Odds: ', gambleOdds);
+                        gambleOdds = Math.random()
                         return;
                     }
                     interaction.reply(`Go mine some blocks you poor`)
@@ -221,7 +221,8 @@ export class MainController{
                     stockPrice = await getStockPrice(ticker);
                     quantity = options.getNumber('quantity')!;
                     cost = stockPrice * quantity + TRADING_COMMISSION;
-                    if(this.AssetController.verifyEnoughBonkle(user.id, cost) && quantity > 0 && Number.isInteger(quantity)){
+                    console.log(`$${ticker} cost: ${stockPrice}`);
+                    if(this.AssetController.verifyEnoughBonkle(user.id, cost) && quantity > 0 && stockPrice > 0 && Number.isInteger(quantity)){
                         let T: Trade = this.AssetController.tradeStock(user.id, 'Bonkle Buck Broker', ticker, stockPrice, quantity);
                         this.BlockController.addTransactionToBlock(T.reciever);
                         this.BlockController.addTransactionToBlock(T.sender);
@@ -236,7 +237,7 @@ export class MainController{
                     stockPrice = await getStockPrice(ticker);
                     quantity = options.getNumber('quantity')!;
                     cost = stockPrice * quantity - TRADING_COMMISSION;
-                    if( this.AssetController.getStocks(user.id, ticker, quantity) && quantity > 0 && Number.isInteger(quantity)){
+                    if( this.AssetController.initStocks(user.id, ticker) && quantity > 0 && stockPrice > 0 && Number.isInteger(quantity)){
                         let T: Trade = this.AssetController.tradeStock(user.id, 'Bonkle Buck Broker', ticker, stockPrice, quantity);
                         this.BlockController.addTransactionToBlock(T.reciever);
                         this.BlockController.addTransactionToBlock(T.sender);

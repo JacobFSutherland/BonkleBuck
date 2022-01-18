@@ -3,6 +3,38 @@ import { toWords } from 'number-to-words';
 const ARITHMATIC_SYMBOLS = ['+', '-', '*', '/'];
 const MAX_COMPUTATIONS = 4;
 const LARGEST_NUMBER = 10000000;
+const L33TLIB: Record<string, string> = {
+    'a': '4',
+    'b': 'l3',
+    'c': '(',
+    'd': '|)',
+    'e': '3',
+    'f': 'ƒ',
+    'g': '9',
+    'h': '|-|',
+    'i': '1',
+    'j': ',_',
+    'k': '|<',
+    'l': '|',
+    'm': 'm',
+    'n': '|\\|',
+    'o': '[]',
+    'p': '|>',
+    'q': '<|,',
+    'r': "|'",
+    's': '5',
+    't': '+',
+    'u': '|_|',
+    'v': 'v',
+    'w': 'w',
+    'x': '><',
+    'y': '\'/',
+    'z': '7\_',
+    ' ': '   ',
+    '-':'-',
+    ',': ','
+
+}
 
 interface Solution{
     question: string;
@@ -113,7 +145,7 @@ function createQuestion(): Solution {
         let symbol = ARITHMATIC_SYMBOLS[randomIntFromInterval(0, LARGEST_NUMBER)%ARITHMATIC_SYMBOLS.length];
         mathProblem += `${numberToBeComputed} ${symbol} `
         if(Math.random() > 0.5){
-            writtenProblem += `${(toWords(numberToBeComputed)).replace(/l/g, 'I')} ${symbol} `
+            writtenProblem += `${(randomL33t(toWords(numberToBeComputed)))} ${symbol} `
         }else{
             writtenProblem += `${numberToBeComputed} ${symbol} `
         }
@@ -133,6 +165,19 @@ function createQuestion(): Solution {
     console.log('Written problem: ', writtenProblem);
     console.log('Actual problem: ', mathProblem);
     return solution;
+}
+
+function randomL33t(s: string){
+    let leet: string = '';
+    s.split('').forEach(letter => {
+        if(Math.random() < 0.2){
+            leet += L33TLIB[letter.toLowerCase()];
+        }else{
+            leet += letter;
+        }
+    });
+    console.log('Leet: ', leet);
+    return leet;
 }
 
 function randomIntFromInterval(min: number, max: number): number { // min and max included 
