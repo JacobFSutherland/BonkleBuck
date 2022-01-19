@@ -1,25 +1,40 @@
 import { Block, BlockGuess, BonkleBuck, Transaction } from "../models";
 import got, { Got, Options } from 'got';
-import { WEBHOOKS } from "../env";
+import { MINING_CHANNEL_ID, WEBHOOKS } from "../env";
+import { Client, MessageAttachment, MessageEmbed, TextChannel } from "discord.js";
 
 const {BLOCK_WEBHOOK, QUESTION_WEBHOOK} = WEBHOOKS;
-
 const MAX_TRANSACTIONS: number = 32;
+
 export class BlockController {
   currentBlock: Block;
   targetBlockTime: number;
   blockReward: number;
   isBeingRead: boolean;
+  CockChain: Client;
+  MINOR_CHANNEL: TextChannel | undefined;
 
-  constructor(blockReward: number, targetBlockTime: number){
+  constructor(blockReward: number, targetBlockTime: number, client: Client){
       this.currentBlock = new Block(0, blockReward, targetBlockTime);
       this.blockReward = blockReward;
       this.targetBlockTime = targetBlockTime;
       this.isBeingRead = false;
+      this.CockChain = client;
   }
 
   addTransactionToBlock(t: Transaction){
     this.currentBlock.addTransaction(t);
+  }
+
+  init(){
+    if(this.CockChain.isReady()){
+      let channel = this.CockChain.channels.cache.get(MINING_CHANNEL_ID) as TextChannel;
+      console.log(`channel.id: ${channel.id}`);
+      this.MINOR_CHANNEL = channel;
+      return;
+    }else{
+      console.log('Not Ready yet');
+    }
   }
 
   async trySolution(solution: BlockGuess): Promise<Transaction | void> {
@@ -56,7 +71,8 @@ export class BlockController {
 
       // Create New Block
 
-      await this.createNewBlock();
+      let captcha = this.createNewBlock();
+
 
       console.log('Created new block');
       this.isBeingRead = false;
@@ -67,6 +83,7 @@ export class BlockController {
       return;
     }
   }
+  
 
   private async splitAndSubmitBlocks(s: BlockGuess, t: Transaction[]){
     if(t.length < 20){
@@ -137,28 +154,13 @@ export class BlockController {
 
   async createNewBlock(){
     this.currentBlock = new Block(MAX_TRANSACTIONS, this.blockReward, this.targetBlockTime);
-    let payload = {
-      embeds: [
-        {
-          "fields":[
-            {
-              name: "Question",
-              value: this.currentBlock.blockQuestion,
-              inline: true, 
-            }
-          ]
-        }
-      ]
-    };
-    console.log('Sending Question')
-    await got.post(
-      {
-        url: QUESTION_WEBHOOK,
-        body: JSON.stringify(payload),
-        headers: { 'Content-Type': 'application/json'}
-      }
-    );
-    console.log('Answer: ', this.currentBlock.blockAnswer);
+    let image = new MessageAttachment(this.currentBlock.captcha.JPEGStream, 'captcha.jpg');
+    console.log(`image.id: ${image.id}`);
+    let embeds = new MessageEmbed().addField('Question', 'Enter the text shown in the image below:');
+    console.log('Returning Question')
+    console.log('Answer: ', this.currentBlock.captcha.value);
+    this.MINOR_CHANNEL!.send({files: [image]});
+    return;
   }
 }
 

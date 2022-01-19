@@ -45,3 +45,21 @@ export interface Trade {
     sender: Transaction,
     reciever: Transaction,
 }
+
+export function createTransaction(sender: string, reciever: string, ammount: number){
+    let medium: BonkleBuck = {
+        type: 'BonkleBuck',
+        ammount,
+    }
+    let t: Transaction = {
+        sender, reciever, medium
+    }
+    return t;   
+}
+
+export function createShopTransaction(reciever: string, medium: BonkleBuck | Stock | Option | NFT | Mute | DiscordInvite){
+    let t: Transaction = {
+        sender: 'Bonkle Buck Broker', reciever, medium
+    }
+    return t;
+}
