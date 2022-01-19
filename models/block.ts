@@ -1,6 +1,6 @@
 import { Transaction } from "./transactions";
 import { toWords } from 'number-to-words';
-import Captcha from "@haileybot/captcha-generator";
+import { DiscordCaptcha } from '../Discord/Captcha'
 const ARITHMATIC_SYMBOLS = ['+', '-', '*', '/'];
 const MAX_COMPUTATIONS = 4;
 const LARGEST_NUMBER = 10000000;
@@ -47,7 +47,7 @@ export class Block {
     private transactions: Transaction[];
     private maxTransactions: number;
     private startTime: number;
-    captcha: Captcha;
+    captcha: DiscordCaptcha;
 
     constructor(transactions: number, reward: number, targetTimeSec: number){
         this.startTime = Date.now();
@@ -57,7 +57,9 @@ export class Block {
         this.reward = reward;
         this.targetTime = targetTimeSec;
         this.transactions = [];
-        this.captcha = new Captcha();
+        console.log('Creating Captcha');
+        this.captcha = new DiscordCaptcha();
+        console.log('Captcha Created');
     }
 
     calculateReward(){
