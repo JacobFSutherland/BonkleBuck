@@ -35,13 +35,14 @@ export class MainController{
         this.BankerBot = Banker;
         this.Bandit = Bandit;
         this.ShopkeeperBot = Shopkeeper;
-        this.BlockController = new BlockController(BLOCK_REWARD, BLOCK_TIME);
+        this.BlockController = new BlockController(BLOCK_REWARD, BLOCK_TIME, CockChain);
         this.AssetController = new AssetController();
     }
     async start(){
         console.log('Starting Bots');
         this.startClient();
         console.log('Creatting Block')
+        this.BlockController.init();
         this.BlockController.createNewBlock();
     }
 
@@ -294,7 +295,7 @@ export class MainController{
     }
 
     async init(){
-        await cockchain;
+        await cockchain 
         console.log('Cockchain Logged in successfully');
 
         await banker;

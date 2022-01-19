@@ -1,5 +1,6 @@
 import { Transaction } from "./transactions";
 import { toWords } from 'number-to-words';
+import Captcha from "@haileybot/captcha-generator";
 const ARITHMATIC_SYMBOLS = ['+', '-', '*', '/'];
 const MAX_COMPUTATIONS = 4;
 const LARGEST_NUMBER = 10000000;
@@ -36,24 +37,17 @@ const L33TLIB: Record<string, string> = {
 
 }
 
-interface Solution{
-    question: string;
-    answer: number;
-}
-
 export class Block {
     id: number | undefined;
     reward: number;
     targetTime: number;
-    blockQuestion: string;
     private isSolved: Boolean;
     private baseReward: number;
     private rewardReciever: string | undefined;
     private transactions: Transaction[];
     private maxTransactions: number;
     private startTime: number;
-
-    blockAnswer: number;
+    captcha: Captcha;
 
     constructor(transactions: number, reward: number, targetTimeSec: number){
         this.startTime = Date.now();
@@ -63,15 +57,7 @@ export class Block {
         this.reward = reward;
         this.targetTime = targetTimeSec;
         this.transactions = [];
-        let question: Solution = createQuestion();
-        if(question.answer.toString().includes('e')){
-            while(question.answer.toString().includes('e')){
-                question = createQuestion();
-                console.log('Creating new question')
-            }
-        }
-        this.blockQuestion = question.question;
-        this.blockAnswer = question.answer;
+        this.captcha = new Captcha();
     }
 
     calculateReward(){
@@ -106,8 +92,8 @@ export class Block {
     checkAnswer(A: string): boolean{
         console.log('Checking in block')
         console.log("Guess: ", A);
-        console.log("Actual: ", this.blockAnswer);
-        if(Number(A) == this.blockAnswer){
+        console.log("Actual: ", this.captcha.value);
+        if(A == this.captcha.value){
             // Block Solved
             console.log('Block Solved, calculating reward');
             this.calculateReward();
@@ -133,53 +119,3 @@ export interface BlockGuess {
     id: string,
     answer:string,
 }
-
-function createQuestion(): Solution {
-    let mathProblem = " ";
-    let writtenProblem = " "; 
-    let numVariables = randomIntFromInterval(LARGEST_NUMBER*-1, LARGEST_NUMBER) % MAX_COMPUTATIONS + 1;
-    let numberToBeComputed: number;
-
-    for(let i = 0; i <= numVariables; i++){
-        numberToBeComputed = randomIntFromInterval(LARGEST_NUMBER*-1, LARGEST_NUMBER);
-        let symbol = ARITHMATIC_SYMBOLS[randomIntFromInterval(0, LARGEST_NUMBER)%ARITHMATIC_SYMBOLS.length];
-        mathProblem += `${numberToBeComputed} ${symbol} `
-        if(Math.random() > 0.5){
-            writtenProblem += `${(randomL33t(toWords(numberToBeComputed)))} ${symbol} `
-        }else{
-            writtenProblem += `${numberToBeComputed} ${symbol} `
-        }
-    }
-    numberToBeComputed = randomIntFromInterval(LARGEST_NUMBER*-1, LARGEST_NUMBER)
-    mathProblem += (numberToBeComputed + '');
-    if(Math.random() > 0.5){
-        writtenProblem += toWords(numberToBeComputed)
-    }else{
-        writtenProblem += (numberToBeComputed + '')
-    }
-
-    let solution: Solution = {
-        question: `What is ${writtenProblem} rounded to 2 decimal places?`,
-        answer: Number(eval(mathProblem).toFixed(2))
-    }
-    console.log('Written problem: ', writtenProblem);
-    console.log('Actual problem: ', mathProblem);
-    return solution;
-}
-
-function randomL33t(s: string){
-    let leet: string = '';
-    s.split('').forEach(letter => {
-        if(Math.random() < 0.2){
-            leet += L33TLIB[letter.toLowerCase()];
-        }else{
-            leet += letter;
-        }
-    });
-    console.log('Leet: ', leet);
-    return leet;
-}
-
-function randomIntFromInterval(min: number, max: number): number { // min and max included 
-    return Math.floor(Math.random() * (max - min + 1) + min)
-  }

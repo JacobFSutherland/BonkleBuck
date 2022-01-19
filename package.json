@@ -31,6 +31,7 @@
     "typescript": "^4.0.2"
   },
   "dependencies": {
+    "@haileybot/captcha-generator": "^1.7.0",
     "@types/easy-table": "^1.2.0",
     "btoa": "^1.2.1",
     "card-validator": "^8.1.0",
