@@ -12,6 +12,29 @@ function randomText(): string{
 
 }
 
+function transformTable (s: string): string{
+    switch(s){
+        case '0': return '1';
+        case '1': return '2';
+        case '2': return '3';
+        case '3': return '4';
+        case '4': return '5';
+        case '6': return '7';
+        case '7': return '8';
+        case '8': return '7';
+        case '9': return '8';
+        case 'a': return '9';
+        case 'b': return 'a';
+        case 'c': return 'b';
+        case 'd': return 'c';
+        case 'e': return 'd';
+        case 'f': return 'e';
+        default:
+            console.log('fucko: ', s); 
+            return '0';
+    }
+}
+
 export class DiscordCaptcha {
     private _canvas: Canvas.Canvas;
     private _value: string;
@@ -99,6 +122,12 @@ export class DiscordCaptcha {
             );
             ctx.fill();
         }
+        let vertMirror = Math.random() > 0.5? -1: 1;
+        let horiztMirror = Math.random() > 0.5? -1: 1;
+        console.log('Vert: ', vertMirror);
+        console.log('Horiz: ', horiztMirror);
+        ctx.scale(vertMirror, horiztMirror);
+
     }
     get value() {
         return this._value;
@@ -117,14 +146,10 @@ function makeRandomColor() {
 
 function makeSimilarColor(color: string): string {
     let newColor = color.split('');
-    newColor[1] = (Math.abs(Math.round(Math.random() * 6 - 3 + parseInt(newColor[1], 16)))%16).toString(16);
-    newColor[2] = Math.round(Math.random() * 16).toString(16);
-    newColor[3] = (Math.abs(Math.round(Math.random() * 6 - 3 + parseInt(newColor[3], 16)))%16).toString(16);
-    newColor[4] = Math.round(Math.random() * 16).toString(16);
-    newColor[5] = (Math.abs(Math.round(Math.random() * 6 - 3 + parseInt(newColor[5], 16)))%16).toString(16);
-    newColor[6] = Math.round(Math.random() * 16).toString(16);
+    newColor[1] = transformTable(newColor[1]);
+    newColor[3] = transformTable(newColor[3]);
+    newColor[5] = transformTable(newColor[5]);
     return newColor.join('');
-
 }
 
 function shuffleArray(arr: any[]){

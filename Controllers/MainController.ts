@@ -148,6 +148,9 @@ export class MainController{
                             }
                             interaction.reply('Invite Purchased, You will recieve your invite on the next block');
                             return;
+                        default:
+                            interaction.reply('No workey');
+                            return;
                     }
                 }      
         })
@@ -238,14 +241,14 @@ export class MainController{
                     stockPrice = await getStockPrice(ticker);
                     quantity = options.getNumber('quantity')!;
                     cost = stockPrice * quantity - TRADING_COMMISSION;
-                    if( this.AssetController.initStocks(user.id, ticker) && quantity > 0 && stockPrice > 0 && Number.isInteger(quantity)){
+                    if( this.AssetController.initStocks(user.id, ticker) >= quantity && quantity > 0 && stockPrice > 0 && Number.isInteger(quantity) && cost > 0){
                         let T: Trade = this.AssetController.tradeStock(user.id, 'Bonkle Buck Broker', ticker, stockPrice, quantity);
                         this.BlockController.addTransactionToBlock(T.reciever);
                         this.BlockController.addTransactionToBlock(T.sender);
-                        interaction.reply('Stocks bought successfully')
+                        interaction.reply('Stocks sold successfully')
                         return;
                     }
-                    interaction.reply('Stocks not bought successfully')
+                    interaction.reply('Stocks not sold successfully')
                     return;
             } 
         
