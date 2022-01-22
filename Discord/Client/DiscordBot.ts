@@ -42,6 +42,37 @@ Banker.once('ready', ()=>{
     })
 
     commands?.create({
+        name: 'createSmartContract',
+        description: 'Create your own smart contracts to be used as tokens, or as contracts for work',
+        options: [
+            {
+                name: 'Contract/Token name',
+                description: 'The name of the token/contract',
+                required: true,
+                type: Constants.ApplicationCommandOptionTypes.STRING
+            },
+            {
+                name: 'Quantity of Tokens/Contracts',
+                description: 'The ammount of tokens/contracts you wish to mint',
+                required: true,
+                type: Constants.ApplicationCommandOptionTypes.NUMBER
+            },
+            {
+                name: 'Stake Ammount',
+                description: 'The ammount of Bonkle Bucks you wish to set as collateral against your contracts (Min of 10 Bonkle Bucks per Token)',
+                required: true,
+                type: Constants.ApplicationCommandOptionTypes.NUMBER
+            },
+            {
+                name: 'Description',
+                description: 'A brief description of what the contract, or token represents',
+                required: true,
+                type: Constants.ApplicationCommandOptionTypes.STRING
+            }
+        ]
+    })
+
+    commands?.create({
         name: 'buystock',
         description: 'Buy Stocks with Bonkle Bucks',
         options: [
