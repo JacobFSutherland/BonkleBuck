@@ -14,8 +14,8 @@ function randomText(): string{
 
 function transformTable (s: string): string{
     switch(s){
-        case '0': return '1';
-        case '1': return '2';
+        case '0': return '2';
+        case '1': return '3';
         case '2': return '3';
         case '3': return '4';
         case '4': return '5';
@@ -27,8 +27,8 @@ function transformTable (s: string): string{
         case 'b': return 'a';
         case 'c': return 'b';
         case 'd': return 'c';
-        case 'e': return 'd';
-        case 'f': return 'e';
+        case 'e': return 'c';
+        case 'f': return 'd';
         default:
             console.log('fucko: ', s); 
             return '0';
@@ -81,7 +81,7 @@ export class DiscordCaptcha {
         }
         ctx.stroke();
         // Set style for circles
-        ctx.fillStyle = makeRandomColor();
+        ctx.fillStyle = makeSimilarColor(colorScheme);
         ctx.lineWidth = 0;
         // Draw circles
         for (let i = 0; i < 900; i++) {
@@ -149,6 +149,7 @@ function makeSimilarColor(color: string): string {
     newColor[1] = transformTable(newColor[1]);
     newColor[3] = transformTable(newColor[3]);
     newColor[5] = transformTable(newColor[5]);
+
     return newColor.join('');
 }
 
