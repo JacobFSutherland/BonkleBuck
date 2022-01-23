@@ -19,6 +19,7 @@ function transformTable (s: string): string{
         case '2': return '3';
         case '3': return '4';
         case '4': return '5';
+        case '5': return '6';
         case '6': return '7';
         case '7': return '8';
         case '8': return '7';
@@ -127,6 +128,7 @@ export class DiscordCaptcha {
         console.log('Vert: ', vertMirror);
         console.log('Horiz: ', horiztMirror);
         ctx.scale(vertMirror, horiztMirror);
+        ctx.save();
 
     }
     get value() {
@@ -134,6 +136,9 @@ export class DiscordCaptcha {
     }
     get JPEGStream() {
         return this._canvas.createJPEGStream();
+    }
+    get PNGStream() {
+        return this._canvas.createPNGStream();
     }
 }
 

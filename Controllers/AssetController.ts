@@ -21,6 +21,43 @@ export class AssetController {
         this.currentBalances['BLOCK_REWARD'] -= b;
     }
 
+    verifyUniqueToken(name: string): boolean {
+        return !this.currentTokens[name];
+    }
+
+    getTokenBalance(token: string, id: string) {
+        if(this.verifyUniqueToken(token)) return 0;
+        if(!this.currentTokens[token].distribution[id])
+            this.currentTokens[token].distribution[id] = 0;
+        return this.currentTokens[token].distribution[id]
+    }
+
+    sendToken(token: string, reciever: string, sender: string, ammount: number): Transaction {
+        let medium: Token = {
+            type: 'Token',
+            tokenName: token,
+            ammount,
+        }
+        let t: Transaction = {
+            sender,
+            reciever,
+            medium
+        }
+        return t;
+    }
+
+    verifyEnoughToken(token: string, userID: string, quantity: number): boolean{
+        if(this.verifyUniqueToken(token)) return false;
+        if(!this.currentTokens[token].distribution[userID])
+            this.currentTokens[token].distribution[userID] = 0;
+        this.currentTokens[token].distribution[userID] -=quantity;
+        if(this.currentTokens[token].distribution[userID] >= 0){
+            return true;
+        }
+        this.currentTokens[token].distribution[userID] +=quantity;
+        return false;
+    }
+
     syncNetwork(blocks: Message<boolean>[], fullSync: boolean): Transaction[] {
         let ordersToFulfill: Transaction[] = [];
         blocks.forEach(block => {
