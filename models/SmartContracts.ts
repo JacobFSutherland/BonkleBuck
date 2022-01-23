@@ -1,4 +1,4 @@
-import { EmbedFieldData, Message, MessageEmbed, User } from "discord.js";
+import { EmbedFieldData, MessageEmbed } from "discord.js";
 
 export class TokenContract {
     type: 'TokenContract';
@@ -7,7 +7,6 @@ export class TokenContract {
     quantity: number;
     minter: string;
     description: string;
-    holderCount: number;
     distribution: {[id: string] : number};
     constructor(tokenName: string, quantity: number, minter: string, description: string, stake: number){
         this.type = 'TokenContract';
@@ -15,20 +14,33 @@ export class TokenContract {
         this.quantity = quantity;
         this.minter = minter,
         this.description = description;
-        this.holderCount = 1;
-        this.distribution = {id: quantity};
+        this.distribution = {};
+        this.distribution[minter] = quantity;
         this.stake = stake;
     }
-    toEmbed(): MessageEmbed {
-        let fields: EmbedFieldData[] = [];
-        fields.push({name: 'Quantity', value: this.quantity+'', inline: true})
-        fields.push({name: 'Token Creator', value: `<@!${this.minter}>`, inline: true})
-        let embed = new MessageEmbed()
-            .setTitle(this.name)
-            .addFields(fields)
-            .setDescription(this.description)
-        return embed;
+}
+
+export function toEmbed(t: TokenContract): MessageEmbed[] {
+    let fields: EmbedFieldData[] = [];
+    let holderBals: string = '';
+    let users: string[] = Object.keys(t.distribution);
+    fields.push({name: 'Quantity', value: t.quantity+'', inline: true})
+    fields.push({name: 'Token Creator', value: `<@!${t.minter}>`, inline: true})
+    
+    for(let i = 0; i < users.length; i++){
+        holderBals += `<@!${users[i]}> holds ${t.distribution[users[i]]} ${t.name}\n`
     }
+
+    let embed = new MessageEmbed()
+        .setTitle(t.name)
+        .addFields(fields)
+        .setDescription(t.description)
+
+    let holders = new MessageEmbed()
+        .setTitle('Holders: ')
+        .setDescription(holderBals)
+
+    return [embed, holders];
 }
 
 export class WorkContract {
@@ -46,7 +58,7 @@ export class WorkContract {
         this.minter = minter;
         this.fulfillers = [];
     }
-    
+
     addFulfiller(fulfillerID: string): boolean {
         return this.fulfillers.push(fulfillerID) > 0;
     }

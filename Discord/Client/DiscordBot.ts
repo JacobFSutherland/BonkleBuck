@@ -46,7 +46,7 @@ Banker.once('ready', ()=>{
         description: 'Send your smart contracts to someone else',
         options: [
             {
-                name: 'tokenname',
+                name: 'token',
                 description: 'The name of the token/contract',
                 required: true,
                 type: Constants.ApplicationCommandOptionTypes.STRING
@@ -171,6 +171,19 @@ Banker.once('ready', ()=>{
     })
 
     commands?.create({
+        name: 'tokenstats',
+        description: 'Get the stats of a token',
+        options: [
+            {
+                name: 'token',
+                description: 'the token you want the stats for',
+                required: true,
+                type: Constants.ApplicationCommandOptionTypes.STRING
+            }
+        ]
+    })
+
+    commands?.create({
         name: 'selloption',
         description: 'Sell option contracts with bonkle bucks',
         options: [
@@ -247,6 +260,8 @@ Shopkeeper.once('ready', () => {
             },
         ]
     })
+
+
 
 
 })

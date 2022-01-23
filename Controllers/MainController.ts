@@ -279,18 +279,21 @@ export class MainController{
                     return
                     // dont create token
                 case 'sendtoken':
-                    name = options.getString('tokenname')!;
+                    name = options.getString('token')!;
                     quantity = options.getNumber('quantity')!;
-                    if(this.AssetController.verifyEnoughToken(name, user.id, quantity)){
+                    if(this.AssetController.verifyEnoughToken(name, user.id, quantity) && quantity > 0){
                         let t = this.AssetController.sendToken(name, options.getUser('reciever')?.id || 'DEAD_WALLET', user.id, options.getNumber('quantity')!);
                         this.BlockController.addTransactionToBlock(t);
-                        interaction.reply('Bonkle Sent Successfully')
+                        interaction.reply(`${name} Sent Successfully`)
                         return;
                     }
-                    interaction.reply('Bonkle not sent Successfully')
+                    interaction.reply(`${name} not sent Successfully`)
                     return;
-                case 'tokenbal':
-
+                case 'tokenstats':
+                    name = options.getString('token')!;
+                    let embeds = this.AssetController.getTokenEmbed(name);
+                    interaction.reply({embeds});
+                    return;
             } 
         
         })  
@@ -356,6 +359,7 @@ export class MainController{
         console.log(blocks.length);
         this.AssetController.syncNetwork(blocks, true);
         console.log('Syncronization complete');
+        console.log(`Tokens: ${this.AssetController.getAllTokens()}`);
         return;
     }
 

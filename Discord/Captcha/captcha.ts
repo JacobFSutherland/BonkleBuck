@@ -42,13 +42,14 @@ export class DiscordCaptcha {
 
     constructor() {
         let colorScheme = makeRandomColor();
+        let similarColor = makeSimilarColor(colorScheme);
         console.log('Creating new captcha');
         // Initialize canvas
         this._canvas = Canvas.createCanvas(400, 400);
         const ctx = this._canvas.getContext("2d");
         // Set background color
         ctx.globalAlpha = 1;
-        ctx.fillStyle = makeSimilarColor(colorScheme);
+        ctx.fillStyle = similarColor;
         ctx.beginPath();
         ctx.fillRect(0, 0, 400, 400);
         ctx.save();
@@ -82,7 +83,7 @@ export class DiscordCaptcha {
         }
         ctx.stroke();
         // Set style for circles
-        ctx.fillStyle = makeSimilarColor(colorScheme);
+        ctx.fillStyle = similarColor;
         ctx.lineWidth = 0;
         // Draw circles
         for (let i = 0; i < 900; i++) {
@@ -97,7 +98,7 @@ export class DiscordCaptcha {
         }
         // Set style for text
         ctx.font = "bold 90px swift";
-        ctx.fillStyle = makeSimilarColor(colorScheme);
+        ctx.fillStyle = colorScheme;
         // Set position for text
         ctx.textAlign = "center";
         ctx.textBaseline = "top";
@@ -114,7 +115,7 @@ export class DiscordCaptcha {
         ctx.restore();
         for (let i = 0; i < 5000; i++) {
             ctx.beginPath();
-            let color = makeSimilarColor(colorScheme);
+            let color = similarColor;
             ctx.arc(Math.round(Math.random() * 400), // X coordinate
             Math.round(Math.random() * 400), // Y coordinate
             Math.random() * 2, // Radius
@@ -127,6 +128,8 @@ export class DiscordCaptcha {
         let horiztMirror = Math.random() > 0.5? -1: 1;
         console.log('Vert: ', vertMirror);
         console.log('Horiz: ', horiztMirror);
+        console.log('Text color: ', similarColor);
+        console.log('Background color: ', colorScheme);
         ctx.scale(vertMirror, horiztMirror);
         ctx.save();
 

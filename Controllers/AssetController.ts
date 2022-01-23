@@ -1,9 +1,9 @@
 import { COCK_SERVER_CHANNEL_ID, SEXY_BONKLES_GUILD_ID, TRADING_COMMISSION } from "../env"
-import { BonkleBuck, Option, OptionMap, OptionValue, Stock, Token, TokenContract, Trade, Transaction } from "../models"
+import { BonkleBuck, Option, OptionMap, OptionValue, Stock, toEmbed, Token, TokenContract, Trade, Transaction } from "../models"
 import { Message, MessageEmbed } from 'discord.js'
-import { CronJob } from 'cron';
 
 export class AssetController {
+
     private currentBalances: {[id: string] : number}
     private currentNFTs: {[id: string] : string[]}
     private currentStocks: {[id: string] : {[ticker: string]: number}}
@@ -16,12 +16,31 @@ export class AssetController {
         this.currentOptions = {};
         this.currentTokens = {};
     }
+
+    getTokenEmbed(token: string): MessageEmbed[] {
+        
+        if(this.currentTokens[token]){
+            //console.log('return big chungus'); 
+            let t = this.currentTokens[token];
+            //console.log(`embed: `, JSON.stringify(t));
+            let embed = toEmbed(t);
+            return embed;
+        }
+        console.log('return nothing');
+        return [new MessageEmbed().setTitle('Coin not found')];
+
+    }
+
+    getAllTokens(): string {
+        return JSON.stringify(this.currentTokens);
+    }
     
     withdrawReward(b: number){
         this.currentBalances['BLOCK_REWARD'] -= b;
     }
 
     verifyUniqueToken(name: string): boolean {
+        name = name.trim();
         return !this.currentTokens[name];
     }
 
