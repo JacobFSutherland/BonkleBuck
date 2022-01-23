@@ -1,5 +1,5 @@
 import { COCK_SERVER_CHANNEL_ID, SEXY_BONKLES_GUILD_ID, TRADING_COMMISSION } from "../env"
-import { BonkleBuck, Option, OptionMap, OptionValue, Stock, Trade, Transaction } from "../models"
+import { BonkleBuck, Option, OptionMap, OptionValue, Stock, Token, TokenContract, Trade, Transaction } from "../models"
 import { Message, MessageEmbed } from 'discord.js'
 import { CronJob } from 'cron';
 
@@ -8,15 +8,54 @@ export class AssetController {
     private currentNFTs: {[id: string] : string[]}
     private currentStocks: {[id: string] : {[ticker: string]: number}}
     private currentOptions: {[id: string]: {[ticker: string]: {[strike: number]: OptionValue}}} 
+    private currentTokens: {[name: string] : TokenContract}
     constructor(){
         this.currentBalances = {};
         this.currentNFTs = {};
         this.currentStocks = {};
         this.currentOptions = {};
+        this.currentTokens = {};
     }
     
     withdrawReward(b: number){
         this.currentBalances['BLOCK_REWARD'] -= b;
+    }
+
+    verifyUniqueToken(name: string): boolean {
+        return !this.currentTokens[name];
+    }
+
+    getTokenBalance(token: string, id: string) {
+        if(this.verifyUniqueToken(token)) return 0;
+        if(!this.currentTokens[token].distribution[id])
+            this.currentTokens[token].distribution[id] = 0;
+        return this.currentTokens[token].distribution[id]
+    }
+
+    sendToken(token: string, reciever: string, sender: string, ammount: number): Transaction {
+        let medium: Token = {
+            type: 'Token',
+            tokenName: token,
+            ammount,
+        }
+        let t: Transaction = {
+            sender,
+            reciever,
+            medium
+        }
+        return t;
+    }
+
+    verifyEnoughToken(token: string, userID: string, quantity: number): boolean{
+        if(this.verifyUniqueToken(token)) return false;
+        if(!this.currentTokens[token].distribution[userID])
+            this.currentTokens[token].distribution[userID] = 0;
+        this.currentTokens[token].distribution[userID] -=quantity;
+        if(this.currentTokens[token].distribution[userID] >= 0){
+            return true;
+        }
+        this.currentTokens[token].distribution[userID] +=quantity;
+        return false;
     }
 
     syncNetwork(blocks: Message<boolean>[], fullSync: boolean): Transaction[] {
@@ -62,6 +101,17 @@ export class AssetController {
             case 'Mute':
                 return false;
             case 'NFT':
+                return false;
+            case 'Token':
+                let token = t.medium as Token;
+                this.addTokenDelta(t.reciever, token.tokenName, token.ammount);
+                if(fullSync){
+                    this.addTokenDelta(t.sender, token.tokenName, -token.ammount);
+                }
+                return false;
+            case 'TokenContract':
+                let contract = t.medium as TokenContract;
+                this.currentTokens[contract.name] = contract;
                 return false;
         }
     }
@@ -111,6 +161,20 @@ export class AssetController {
         if(!this.currentOptions[discordID][o.ticker][o.strike]) this.currentOptions[discordID][o.ticker][o.strike] = {Calls: 0, Puts: 0};
         this.currentOptions[discordID][o.ticker][o.strike][o.option] += o.contracts;
     }
+
+    addTokenDelta(DiscordID: string, tokenName: string, tokens: number): void {
+        if(!this.currentTokens[tokenName]){
+            console.log(`Token name ${tokenName} does not exist`);
+        }
+        if(!this.currentTokens[tokenName].distribution){
+            console.log(`Token name ${tokenName} does not have any holders`);
+        }
+        if(!this.currentTokens[tokenName].distribution[DiscordID]){
+            this.currentTokens[tokenName].distribution[DiscordID] = 0;
+        }
+        this.currentTokens[tokenName].distribution[DiscordID] += tokens;
+    }
+
 
     removeOptions(discordID: string, o: Option){
         if(!this.currentOptions[discordID]) this.currentOptions[discordID] = {};

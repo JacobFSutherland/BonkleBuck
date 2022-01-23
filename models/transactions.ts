@@ -1,8 +1,16 @@
+import { TokenContract } from ".";
+
 export interface Transaction {
     reciever: string
-    medium: BonkleBuck | Stock | Option | NFT | Mute | DiscordInvite
+    medium: BonkleBuck | Stock | Option | NFT | Mute | DiscordInvite | Token | TokenContract
     sender: string
 };
+
+export interface Token {
+    type: 'Token'
+    tokenName: string
+    ammount: number
+}
 
 export interface BonkleBuck {
     type: 'BonkleBuck'
@@ -11,8 +19,8 @@ export interface BonkleBuck {
 
 export interface Stock {
     type: 'Stock'
-    ticker: string,
-    ammount: number,
+    ticker: string
+    ammount: number
 }
 
 export interface Option {

@@ -2,7 +2,7 @@ import { AnyChannel, Channel, Client, Collection, FetchChannelOptions, Message, 
 import { parse } from 'node-html-parser';
 import got from "got/dist/source";
 import { CockChain, Banker, Shopkeeper, Bandit, BanditEmbed, ShopInventoryEmbed, StockHelpEmbed, StockTerminologyEmbed, HelpEmbed } from "../Discord/Client";
-import { BlockGuess, Transaction, BonkleBuck, NFT, Stock, Option, DiscordInvite, OptionTable, OptionMap, OptionStat, OptionValue, Trade, createShopTransaction, createTransaction, getOptions, getStockPrice } from "../models";
+import { BlockGuess, Transaction, BonkleBuck, NFT, Stock, Option, DiscordInvite, OptionTable, OptionMap, OptionStat, OptionValue, Trade, createShopTransaction, createTransaction, getOptions, getStockPrice, TokenContract } from "../models";
 import { BlockController } from "./"; 
 import { BLOCK_CHANNEL_ID, BANDIT_TOKEN, COCKSINO_CHANNEL_ID, SEXY_BONKLES_GUILD_ID, COCK_SERVER_CHANNEL_ID, MINING_CHANNEL_ID, BAAZAR_CHANNEL_ID, COCK_EXCHANGE_CHANNEL_ID, STOCK_TRANSACTION_FEE, COCKCHAIN_TOKEN, BANKER_TOKEN, BLOCK_REWARD, BLOCK_TIME, SHOPKEEPER_TOKEN, TRADING_COMMISSION } from '../env'
 import { AssetController } from "./AssetController";
@@ -136,6 +136,10 @@ export class MainController{
                 case 'bal': 
                     interaction.reply(`You have ${this.AssetController.getBonkleBalance(user.id)} Bonkle Bucks`);
                     return;
+                case 'tokenbal':
+                    let token = options.getString('token')!;
+                    interaction.reply(`You have ${this.AssetController.getTokenBalance(token, user.id)} ${token}/s`);
+                    return;
                 case 'buy':
                     switch(options.getString('item')!.toLowerCase()){
                         case 'discordinvite':
@@ -169,6 +173,10 @@ export class MainController{
             let stockPrice: number;
             let quantity: number;
             let cost: number;
+            let name: string;
+            let stake: number;
+            let description: string;
+            let reciever: User;
             switch(commandName){
                 case 'sendbonkle': 
                     console.log(`user id: ${user.id}`)
@@ -250,6 +258,39 @@ export class MainController{
                     }
                     interaction.reply('Stocks not sold successfully')
                     return;
+                case 'createtoken': 
+                    name = options.getString('name')!;
+                    quantity = options.getNumber('quantity')!;
+                    stake = options.getNumber('stake')!;
+                    description = options.getString('description')!;
+                    if(this.AssetController.verifyEnoughBonkle(user.id, stake) && this.AssetController.verifyUniqueToken(name) && stake*10 >= quantity && Number.isInteger(quantity)){
+                        let token = new TokenContract(name, quantity, user.id, description, stake);
+                        let t: Transaction = {
+                            reciever: user.id,
+                            medium: token,
+                            sender: 'DEAD_WALLET',
+                        }
+                        this.BlockController.addTransactionToBlock(t);
+                        interaction.reply('Token created successfully and will appear on the next block')
+                        return;
+                        //Create token
+                    }
+                    interaction.reply('Token not created successfully')
+                    return
+                    // dont create token
+                case 'sendtoken':
+                    name = options.getString('tokenname')!;
+                    quantity = options.getNumber('quantity')!;
+                    if(this.AssetController.verifyEnoughToken(name, user.id, quantity)){
+                        let t = this.AssetController.sendToken(name, options.getUser('reciever')?.id || 'DEAD_WALLET', user.id, options.getNumber('quantity')!);
+                        this.BlockController.addTransactionToBlock(t);
+                        interaction.reply('Bonkle Sent Successfully')
+                        return;
+                    }
+                    interaction.reply('Bonkle not sent Successfully')
+                    return;
+                case 'tokenbal':
+
             } 
         
         })  

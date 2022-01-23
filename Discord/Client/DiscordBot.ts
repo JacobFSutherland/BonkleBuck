@@ -24,7 +24,7 @@ Banker.once('ready', ()=>{
 
     commands?.create({
         name: 'sendbonkle',
-        description: 'Get your current balance',
+        description: 'Send Bonkle Bucks to your buddies!',
         options: [
             {
                 name: 'reciever',
@@ -37,6 +37,62 @@ Banker.once('ready', ()=>{
                 description: 'The user you wish to send stuff to (i\'m stuff)',
                 required: true,
                 type: Constants.ApplicationCommandOptionTypes.NUMBER
+            }
+        ]
+    })
+
+    commands?.create({
+        name: 'sendtoken',
+        description: 'Send your smart contracts to someone else',
+        options: [
+            {
+                name: 'tokenname',
+                description: 'The name of the token/contract',
+                required: true,
+                type: Constants.ApplicationCommandOptionTypes.STRING
+            },
+            {
+                name: 'reciever',
+                description: 'The user you wish to send stuff to (i\'m stuff)',
+                required: true,
+                type: Constants.ApplicationCommandOptionTypes.USER
+            },
+            {
+                name: 'quantity',
+                description: 'The ammount of tokens/contracts you wish to mint',
+                required: true,
+                type: Constants.ApplicationCommandOptionTypes.NUMBER
+            },
+        ]
+    })
+
+    commands?.create({
+        name: 'createtoken',
+        description: 'Create your own tokens',
+        options: [
+            {
+                name: 'name',
+                description: 'The name of the token',
+                required: true,
+                type: Constants.ApplicationCommandOptionTypes.STRING
+            },
+            {
+                name: 'quantity',
+                description: 'The ammount of tokens you wish to mint',
+                required: true,
+                type: Constants.ApplicationCommandOptionTypes.NUMBER
+            },
+            {
+                name: 'stake',
+                description: 'Minimum of 10 Bonkle Bucks per Token Created',
+                required: true,
+                type: Constants.ApplicationCommandOptionTypes.NUMBER
+            },
+            {
+                name: 'description',
+                description: 'A brief description of what the contract, or token represents',
+                required: true,
+                type: Constants.ApplicationCommandOptionTypes.STRING
             }
         ]
     })
@@ -164,6 +220,19 @@ Shopkeeper.once('ready', () => {
     commands?.create({
         name: 'bal',
         description: 'Get your current balance'
+    })
+
+    commands?.create({
+        name: 'tokenbal',
+        description: 'Get your current balance for a specific token',
+        options: [
+            {
+                name: 'token',
+                description: 'the token you want your bal to',
+                required: true,
+                type: Constants.ApplicationCommandOptionTypes.STRING
+            }
+        ]
     })
 
     commands?.create({
