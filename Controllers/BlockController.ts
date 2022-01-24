@@ -154,7 +154,7 @@ export class BlockController {
 
   async createNewBlock(){
     this.currentBlock = new Block(MAX_TRANSACTIONS, this.blockReward, this.targetBlockTime);
-    let image = new MessageAttachment(this.currentBlock.captcha.PNGStream, 'captcha.png');;
+    let image = new MessageAttachment(this.currentBlock.captcha.PNGStream(), 'captcha.png');;
     let embeds = new MessageEmbed().addField('Question', 'Enter the text shown in the image below:');
     console.log('Returning Question')
     console.log('Answer: ', this.currentBlock.captcha.value);

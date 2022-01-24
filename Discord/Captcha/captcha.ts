@@ -1,4 +1,5 @@
-import Canvas from "canvas";
+import Canvas, { JPEGStream, PNGStream } from "canvas";
+
 Canvas.registerFont(require("path").resolve(__dirname, "./Swift.ttf"), {
     family: "swift"
 });
@@ -39,6 +40,16 @@ function transformTable (s: string): string{
 export class DiscordCaptcha {
     private _canvas: Canvas.Canvas;
     private _value: string;
+
+    value(): string {
+        return this._value;
+    }
+    JPEGStream(): JPEGStream {
+        return this._canvas.createJPEGStream();
+    }
+    PNGStream(): PNGStream {
+        return this._canvas.createPNGStream();
+    }
 
     constructor() {
         let colorScheme = makeRandomColor();
@@ -133,15 +144,6 @@ export class DiscordCaptcha {
         ctx.scale(vertMirror, horiztMirror);
         ctx.save();
 
-    }
-    get value() {
-        return this._value;
-    }
-    get JPEGStream() {
-        return this._canvas.createJPEGStream();
-    }
-    get PNGStream() {
-        return this._canvas.createPNGStream();
     }
 }
 
