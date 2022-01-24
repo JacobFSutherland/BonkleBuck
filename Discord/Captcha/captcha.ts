@@ -1,6 +1,6 @@
-import Canvas, { JPEGStream, PNGStream } from "canvas";
+import {Canvas, JPEGStream, PNGStream, registerFont} from "canvas";
 
-Canvas.registerFont(require("path").resolve(__dirname, "./Swift.ttf"), {
+registerFont(require("path").resolve(__dirname, "./Swift.ttf"), {
     family: "swift"
 });
 
@@ -38,7 +38,7 @@ function transformTable (s: string): string{
 }
 
 export class DiscordCaptcha {
-    private _canvas: Canvas.Canvas;
+    private _canvas: Canvas;
     private _value: string;
 
     value(): string {
@@ -56,7 +56,7 @@ export class DiscordCaptcha {
         let similarColor = makeSimilarColor(colorScheme);
         console.log('Creating new captcha');
         // Initialize canvas
-        this._canvas = Canvas.createCanvas(400, 400);
+        this._canvas = new Canvas(400, 400);
         const ctx = this._canvas.getContext("2d");
         // Set background color
         ctx.globalAlpha = 1;
