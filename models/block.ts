@@ -95,7 +95,7 @@ export class Block {
         console.log('Checking in block')
         console.log("Guess: ", A);
         console.log("Actual: ", this.captcha.value);
-        if(A == this.captcha.value){
+        if(A == this.captcha.value()){
             // Block Solved
             console.log('Block Solved, calculating reward');
             this.calculateReward();
