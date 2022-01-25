@@ -1,7 +1,7 @@
 import { Message, MessageEmbed } from "discord.js";
-import Table from "easy-table"
 import got from "got/dist/source";
 import parse from "node-html-parser";
+import { Table, TableRow } from ".";
 
 export interface OptionStat {
     bid: number,
@@ -43,13 +43,15 @@ export class OptionMap {
         console.log('Upper: ', strikes[upperIndex]);
         strikes = strikes.splice(lowerIndex, upperIndex-lowerIndex+1);
         strikes.forEach(strike => {
-            t.cell('Strike', (Math.round(Number(strike) * 100) / 100).toFixed(2));
-            t.cell('Bid', (Math.round(Number(this.Calls[Number(strike)].bid) * 100) / 100).toFixed(2));
-            t.cell('Ask', (Math.round(Number(this.Calls[Number(strike)].ask) * 100) / 100).toFixed(2));
-            t.newRow();
+            let r: TableRow = {
+                Strike: (Math.round(Number(strike) * 100) / 100).toFixed(2),
+                Bid: (Math.round(Number(this.Calls[Number(strike)].bid) * 100) / 100).toFixed(2),
+                Ask: (Math.round(Number(this.Calls[Number(strike)].ask) * 100) / 100).toFixed(2)
 
+            }
+            t.push(r);
         });
-        embed.setDescription(t.toString());
+        embed.setDescription(t.printTable());
         return embed;
     }
 
@@ -57,7 +59,7 @@ export class OptionMap {
         if(!numberOfStrikes) numberOfStrikes = 10;
         let embed = new MessageEmbed;
         embed.setTitle('Puts: ');
-        let t = new Table();
+        let t: Table = new Table();
         let strikes = Object.keys(this.Puts).sort((a,b)=>{return Number(a)-Number(b)});
         let lowerIndex = findLowerStrikeIndex(strikes, this.currentPrice);
         let upperIndex = findUpperStrikeIndex(strikes, this.currentPrice);
@@ -67,12 +69,14 @@ export class OptionMap {
         console.log('Upper: ', strikes[upperIndex]);
         strikes = strikes.splice(lowerIndex, upperIndex-lowerIndex+1);
         strikes.forEach(strike => {
-            t.cell('Strike', (Math.round(Number(strike) * 100) / 100).toFixed(2));
-            t.cell('Bid', (Math.round(Number(this.Puts[Number(strike)].bid) * 100) / 100).toFixed(2));
-            t.cell('Ask', (Math.round(Number(this.Puts[Number(strike)].ask) * 100) / 100).toFixed(2));
-            t.newRow();
+            let r: TableRow = {
+                Strike: (Math.round(Number(strike) * 100) / 100).toFixed(2),
+                Bid: (Math.round(Number(this.Puts[Number(strike)].bid) * 100) / 100).toFixed(2),
+                Ask: (Math.round(Number(this.Puts[Number(strike)].ask) * 100) / 100).toFixed(2)            
+            }
+            t.push(r);
         });
-        embed.setDescription(t.toString());
+        embed.setDescription(t.printTable());
         return embed;
     }
 

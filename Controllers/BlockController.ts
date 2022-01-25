@@ -157,7 +157,7 @@ export class BlockController {
     let image = new MessageAttachment(this.currentBlock.captcha.PNGStream(), 'captcha.png');;
     let embeds = new MessageEmbed().addField('Question', 'Enter the text shown in the image below:');
     console.log('Returning Question')
-    console.log('Answer: ', this.currentBlock.captcha.value);
+    console.log('Answer: ', this.currentBlock.captcha.value());
     this.MINOR_CHANNEL!.send({files: [image]});
     return;
   }
