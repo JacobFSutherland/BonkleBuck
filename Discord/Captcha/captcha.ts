@@ -52,7 +52,11 @@ export class DiscordCaptcha {
     }
 
     constructor() {
-        let colorScheme = makeRandomColor();
+        let colorScheme: string = '';
+        while(colorScheme.length != 9){
+            colorScheme = makeRandomColor();
+            console.log('Chosing random color: ', colorScheme)
+        }
         let similarColor = makeSimilarColor(colorScheme);
         console.log('Creating new captcha');
         // Initialize canvas
