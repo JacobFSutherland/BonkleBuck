@@ -159,7 +159,7 @@ Banker.once('ready', ()=>{
                 name: 'option_strike',
                 description: 'The strike price of the option you wish to buy',
                 type: Constants.ApplicationCommandOptionTypes.NUMBER,
-                required: true,
+                required: true, 
             },
             {
                 name: 'option_quantity',
