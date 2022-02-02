@@ -149,6 +149,7 @@ export class MainController{
                                 this.BlockController.addTransactionToBlock(t1);
                                 this.BlockController.addTransactionToBlock(t2);
                                 interaction.reply('Invite Purchased, You will recieve your invite on the next block');
+                                return;
                             }
                             interaction.reply('Invite Purchased, You will recieve your invite on the next block');
                             return;
@@ -328,16 +329,18 @@ export class MainController{
     sendDeliverables(transactions: Transaction[]) {
         console.log('Sending Invites');
         transactions.forEach(t => {
-            console.log('Sending Invite');
-            this.ShopkeeperBot.users.fetch(t.reciever).then(user => {
-                let invite: string;
-                this.BankerBot.guilds.fetch(SEXY_BONKLES_GUILD_ID).then((guild) => {
-                    if(guild) 
-                        guild.invites.create(COCK_SERVER_CHANNEL_ID, {maxUses: 1, maxAge: 604800}).then(guildInvite => {
-                            user.send(`Your Invite to Sexy Bonkles: discord.gg/${guildInvite.code}`);
-                        });
+            if(t.medium.type == 'DiscordInvite'){
+                console.log('Sending Invite');
+                this.ShopkeeperBot.users.fetch(t.reciever).then(user => {
+                    let invite: string;
+                    this.BankerBot.guilds.fetch(SEXY_BONKLES_GUILD_ID).then((guild) => {
+                        if(guild) 
+                            guild.invites.create(COCK_SERVER_CHANNEL_ID, {maxUses: 1, maxAge: 604800}).then(guildInvite => {
+                                user.send(`Your Invite to Sexy Bonkles: discord.gg/${guildInvite.code}`);
+                            });
+                    });
                 });
-            });
+            }
         });
     }
 
