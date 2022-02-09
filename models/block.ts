@@ -4,38 +4,6 @@ import { DiscordCaptcha } from '../Discord/Captcha'
 const ARITHMATIC_SYMBOLS = ['+', '-', '*', '/'];
 const MAX_COMPUTATIONS = 4;
 const LARGEST_NUMBER = 10000000;
-const L33TLIB: Record<string, string> = {
-    'a': '4',
-    'b': 'l3',
-    'c': '(',
-    'd': '|)',
-    'e': '3',
-    'f': 'ƒ',
-    'g': '9',
-    'h': '|-|',
-    'i': '1',
-    'j': ',_',
-    'k': '|<',
-    'l': '|',
-    'm': 'm',
-    'n': '|\\|',
-    'o': '[]',
-    'p': '|>',
-    'q': '<|,',
-    'r': "|'",
-    's': '5',
-    't': '+',
-    'u': '|_|',
-    'v': 'v',
-    'w': 'w',
-    'x': '><',
-    'y': '\'/',
-    'z': '7\_',
-    ' ': '   ',
-    '-':'-',
-    ',': ','
-
-}
 
 export class Block {
     id: number | undefined;

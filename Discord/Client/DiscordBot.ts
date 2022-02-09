@@ -1,4 +1,5 @@
 import { Client, Intents, Constants } from 'discord.js';
+import { cpuUsage } from 'node:process';
 import { SEXY_BONKLES_GUILD_ID } from '../../env';
 import { ItemsForSale } from '../../models'
 
@@ -21,6 +22,48 @@ Banker.once('ready', ()=>{
     }else{
         commands = Banker.application?.commands;
     }
+
+    commands?.create({
+        name: 'supply',
+        description: 'Get the total bonkle bucks in circulation',
+    })
+
+    commands?.create({
+        name: 'stockstats',
+        description: 'Get information on a stock',
+        options: [
+            {
+                name: 'ticker',
+                description: 'The stock you wish to get info on',
+                required: true,
+                type: Constants.ApplicationCommandOptionTypes.STRING
+            }
+        ]
+    })
+
+    commands?.create({
+        name: 'optionstats',
+        description: 'Get information on an option',
+        options: [
+            {
+                name: 'ticker',
+                description: 'The option you wish to get info on',
+                required: true,
+                type: Constants.ApplicationCommandOptionTypes.STRING
+            },
+            {
+                name: 'strikes',
+                description: 'The number of strikes you want to see',
+                required: false,
+                type: Constants.ApplicationCommandOptionTypes.INTEGER
+            }
+        ]
+    })
+
+    commands?.create({
+        name: 'portfolio',
+        description: 'Get your entire stock and option portfolio',
+    })
 
     commands?.create({
         name: 'sendbonkle',
@@ -118,7 +161,7 @@ Banker.once('ready', ()=>{
 
     commands?.create({
         name: 'sellstock',
-        description: 'Buy Bonkle Bucks with Stocks',
+        description: 'Sell Stocks for Bonkle Bucks',
         options: [
             {
                 name: 'ticker',

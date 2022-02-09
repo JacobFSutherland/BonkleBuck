@@ -149,9 +149,9 @@ export class MainController{
                                 this.BlockController.addTransactionToBlock(t1);
                                 this.BlockController.addTransactionToBlock(t2);
                                 interaction.reply('Invite Purchased, You will recieve your invite on the next block');
-                                return;
+                            }else{
+                                interaction.reply('Invite Not Purchased, Poor!');
                             }
-                            interaction.reply('Invite Purchased, You will recieve your invite on the next block');
                             return;
                         default:
                             interaction.reply('No workey');
@@ -178,6 +178,8 @@ export class MainController{
             let stake: number;
             let description: string;
             let reciever: User;
+            let strikes: number;
+            let embeds: MessageEmbed[]
             switch(commandName){
                 case 'sendbonkle': 
                     console.log(`user id: ${user.id}`)
@@ -292,9 +294,31 @@ export class MainController{
                     return;
                 case 'tokenstats':
                     name = options.getString('token')!;
-                    let embeds = this.AssetController.getTokenEmbed(name);
+                    embeds = this.AssetController.getTokenEmbed(name);
                     interaction.reply({embeds});
                     return;
+                case 'stockstats':
+                    name = options.getString('ticker')!.replace('$', '')
+                    let price = await getStockPrice(name)
+                    interaction.reply(`$${name} is currently trading for ${price}`)
+                    return;
+                case 'optionstats':
+                    name = options.getString('ticker')!.replace('$', '')
+                    strikes = options.getInteger('strikes') || 6;
+                    optionChain = await getOptions(name);
+                    let calls = optionChain.callsToStringEmbed(strikes)
+                    let puts = optionChain.putsToStringEmbed(strikes)
+                    interaction.reply({embeds: [calls, puts]})
+                    return;
+                case 'portfolio':
+                    let stockPortfolio = this.AssetController.getStockPortfolioEmbed(user.id)
+                    stockPortfolio.push(this.AssetController.getTokenPortfolioEmbed(user.id))
+                    interaction.reply({embeds: stockPortfolio});
+                    return;
+                case 'supply':
+                    embeds = this.AssetController.getCirculatingSupply()
+                    interaction.reply({embeds})
+
             } 
         
         })  

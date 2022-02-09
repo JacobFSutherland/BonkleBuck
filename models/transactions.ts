@@ -6,6 +6,14 @@ export interface Transaction {
     sender: string
 };
 
+export interface SupplyDetails {
+    reward: number,
+    circulatingSupply: number,
+    deadWalletBal: number,
+    cocksinoBal: number,
+    brokerBal: number
+}
+
 export interface Token {
     type: 'Token'
     tokenName: string
