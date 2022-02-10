@@ -380,7 +380,7 @@ export class AssetController {
             .setTitle('Put Options')
         let calls = new MessageEmbed()
             .setTitle('Call Options')
-        let tickers = Object.keys(this.currentOptions[id]) || []
+        let tickers = Object.keys(this.currentOptions[id] || {})
         if(tickers.length != 0) 
             for(let i = 0; i < tickers.length; i++){
                 let strikes = Object.keys(this.currentOptions[id][tickers[i]])
