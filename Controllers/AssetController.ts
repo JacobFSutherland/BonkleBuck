@@ -238,12 +238,13 @@ export class AssetController {
     */
     
     initStocks(id: string, ticker: string): number {
+        if(ticker.indexOf('$') != 0) ticker = `$${ticker}`
         if(!this.currentStocks[id]) this.currentStocks[id] = {};
-        if(!this.currentStocks[id][ticker]) this.currentStocks[id][ticker] = 0;
+        if(!this.currentStocks[id]['$'+ticker]) this.currentStocks[id][ticker] = 0;
         console.log(`this.currentStocks[${id}][${ticker}] = ${this.currentStocks[id][ticker]}`);
         return this.currentStocks[id][ticker];
     }
-
+    
     verifyBuyStock(discordID: string, ticker: string, stockPrice: number, quantity: string): Boolean {
         if(!validPositiveInteger(quantity) && !validPositiveInteger(stockPrice+'')) return false;
         let totalCost = (Number(quantity) * stockPrice + TRADING_COMMISSION);
