@@ -163,10 +163,10 @@ export class MainController{
                             return;
                     }
                 case 'noise':
-                    interaction.deferReply()
+                    await interaction.deferReply()
                     let voiceChannel: VoiceChannel | undefined = this.getVoiceChannel(interaction)
                     if(voiceChannel == undefined){ 
-                        interaction.editReply('Join a channel, headass')
+                        await interaction.editReply('Join a channel, headass')
                         return;
                     }
                     let sounds = getCurrentSounds()
@@ -193,12 +193,12 @@ export class MainController{
                             connection.setSpeaking(true);
                             await entersState(this.Player, AudioPlayerStatus.Idle, 60e3);
                             connection.setSpeaking(false);
-                            interaction.editReply('Sound played')
+                            await interaction.editReply('Sound played')
                         }else{
-                            interaction.reply('Sound Not Purchased, Poor!');
+                            await interaction.reply('Sound Not Purchased, Poor!');
                         }
                     }else{
-                        interaction.reply('Sound Not Found, Bad!');
+                        await interaction.reply('Sound Not Found, Bad!');
                     }
                 }    
         })
