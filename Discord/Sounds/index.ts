@@ -8,7 +8,7 @@ const voiceConnections: Record<Snowflake, VoiceConnection> = {};
 export function getCurrentSounds(): {[id: string]: string}{
     let audio: {[id: string]: string} = {}
     console.log(`dirname: ${__dirname}`)
-    let dir = __dirname + '\\';
+    let dir = __dirname + '/';
     fs.readdirSync(__dirname).forEach(file => {
         if(file.includes('.mp3'))
             audio[file] = dir + file
