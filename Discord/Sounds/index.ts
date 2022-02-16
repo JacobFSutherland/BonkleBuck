@@ -1,4 +1,4 @@
-import fs from 'fs'
+import * as fs from 'fs';
 import { joinVoiceChannel, entersState, VoiceConnectionStatus, DiscordGatewayAdapterCreator, VoiceConnection } from '@discordjs/voice';
 import { Snowflake, VoiceChannel } from 'discord.js';
 import { createDiscordJSAdapter } from './adapter';
