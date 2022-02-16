@@ -181,7 +181,6 @@ export class MainController{
                             let t2: Transaction = createShopTransaction(user.id, {type: 'Sound', ammount: 1});
                             this.BlockController.addTransactionToBlock(t1);
                             this.BlockController.addTransactionToBlock(t2);
-                            
                             console.log('Voice Channel established')
                             let connection = await connectToChannel(voiceChannel);
                             connection.subscribe(this.Player);
@@ -194,8 +193,13 @@ export class MainController{
                             await entersState(this.Player, AudioPlayerStatus.Idle, 60e3);
                             connection.setSpeaking(false);
                             await interaction.editReply('Sound played')
-                            connection.disconnect()
-                            connection.destroy()
+                            try{
+                                connection.disconnect()
+                                connection.destroy()
+                                console.log('connection destroyed successfully')
+                            }catch(e){
+                                console.log('connection overwritten')
+                            }
                             return;
                         }else{
                             await interaction.reply('Sound Not Purchased, Poor!');
