@@ -1,4 +1,4 @@
-import { AnyChannel, Channel, Client, Collection, FetchChannelOptions, Message, TextChannel, MessageEmbed, Invite, User, GuildMember, VoiceChannel, VoiceBasedChannel } from "discord.js";
+import { AnyChannel, Channel, Client, Collection, FetchChannelOptions, Message, TextChannel, MessageEmbed, Invite, User, GuildMember, VoiceChannel, VoiceBasedChannel, CacheType, CommandInteraction } from "discord.js";
 import { parse } from 'node-html-parser';
 import got from "got/dist/source";
 import { CockChain, Banker, Shopkeeper, Bandit, BanditEmbed, ShopInventoryEmbed, StockHelpEmbed, StockTerminologyEmbed, HelpEmbed } from "../Discord/Client";
@@ -164,6 +164,11 @@ export class MainController{
                     }
                 case 'noise':
                     interaction.deferReply()
+                    let voiceChannel: VoiceChannel | undefined = this.getVoiceChannel(interaction)
+                    if(voiceChannel == undefined){ 
+                        interaction.editReply('Join a channel, headass')
+                        return;
+                    }
                     let sounds = getCurrentSounds()
                     let sound = options.getString('sound')!.toLowerCase();
                     console.log('Sounds: ');
@@ -176,9 +181,7 @@ export class MainController{
                             let t2: Transaction = createShopTransaction(user.id, {type: 'Sound', ammount: 1});
                             this.BlockController.addTransactionToBlock(t1);
                             this.BlockController.addTransactionToBlock(t2);
-                            let guild = Shopkeeper.guilds.cache.get(interaction.guildId || '')
-                            let member = guild?.members.cache.get(interaction.member?.user.id || '');
-                            let voiceChannel: VoiceChannel = member?.voice.channel as VoiceChannel;
+                            
                             console.log('Voice Channel established')
                             let connection = await connectToChannel(voiceChannel);
                             connection.subscribe(this.Player);
@@ -199,6 +202,15 @@ export class MainController{
                     }
                 }    
         })
+    }
+    getVoiceChannel(interaction: CommandInteraction<CacheType>): VoiceChannel | undefined {
+        let guild = Shopkeeper.guilds.cache.get(interaction.guildId || '')
+        let member = guild?.members.cache.get(interaction.member?.user.id || '');
+        if(member)
+            if(member.voice)
+                if(member.voice.channel) return member.voice.channel as VoiceChannel;
+        return undefined;
+        
     }
 
     startBankerBot() {
