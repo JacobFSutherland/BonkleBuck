@@ -194,6 +194,8 @@ export class MainController{
                             await entersState(this.Player, AudioPlayerStatus.Idle, 60e3);
                             connection.setSpeaking(false);
                             await interaction.editReply('Sound played')
+                            connection.disconnect()
+                            connection.destroy()
                         }else{
                             await interaction.reply('Sound Not Purchased, Poor!');
                         }
