@@ -1,4 +1,4 @@
-import { AnyChannel, Channel, Client, Collection, FetchChannelOptions, Message, TextChannel, MessageEmbed, Invite, User, GuildMember } from "discord.js";
+import { AnyChannel, Channel, Client, Collection, FetchChannelOptions, Message, TextChannel, MessageEmbed, Invite, User, GuildMember, VoiceChannel, VoiceBasedChannel } from "discord.js";
 import { parse } from 'node-html-parser';
 import got from "got/dist/source";
 import { CockChain, Banker, Shopkeeper, Bandit, BanditEmbed, ShopInventoryEmbed, StockHelpEmbed, StockTerminologyEmbed, HelpEmbed } from "../Discord/Client";
@@ -6,7 +6,9 @@ import { BlockGuess, Transaction, BonkleBuck, NFT, Stock, Option, DiscordInvite,
 import { BlockController } from "./"; 
 import { BLOCK_CHANNEL_ID, BANDIT_TOKEN, COCKSINO_CHANNEL_ID, SEXY_BONKLES_GUILD_ID, COCK_SERVER_CHANNEL_ID, MINING_CHANNEL_ID, BAAZAR_CHANNEL_ID, COCK_EXCHANGE_CHANNEL_ID, STOCK_TRANSACTION_FEE, COCKCHAIN_TOKEN, BANKER_TOKEN, BLOCK_REWARD, BLOCK_TIME, SHOPKEEPER_TOKEN, TRADING_COMMISSION } from '../env'
 import { AssetController } from "./AssetController";
-
+import { connectToChannel, getCurrentSounds } from "../Discord/Sounds";
+import { joinVoiceChannel, createAudioPlayer, createAudioResource, entersState, StreamType, AudioPlayerStatus, NoSubscriberBehavior, VoiceConnectionStatus, generateDependencyReport, AudioPlayer } from '@discordjs/voice';
+import { join } from 'path';
 
 
 console.log('Cockchain Logging in');
@@ -30,6 +32,7 @@ export class MainController{
     private ShopkeeperBot: Client;
     private Bandit: Client;
     private BlockController: BlockController;
+    private Player: AudioPlayer;
     constructor(){
         this.BlockchainBot = CockChain;
         this.BankerBot = Banker;
@@ -37,6 +40,7 @@ export class MainController{
         this.ShopkeeperBot = Shopkeeper;
         this.BlockController = new BlockController(BLOCK_REWARD, BLOCK_TIME, CockChain);
         this.AssetController = new AssetController();
+        this.Player = createAudioPlayer();
     }
     async start(){
         console.log('Starting Bots');
@@ -47,6 +51,7 @@ export class MainController{
     }
 
     startClient() {
+        console.log(generateDependencyReport())
         // Block Miner
         this.startBlockChainBot(); 
         this.startBankerBot();
@@ -128,7 +133,7 @@ export class MainController{
     }
 
     startShopkeeperBot() {
-        this.ShopkeeperBot.on('interactionCreate', interaction => {
+        this.ShopkeeperBot.on('interactionCreate', async interaction => {
             if(!interaction.isCommand()) return;
             const { commandName, options, user } = interaction;
             console.log('Shop Request made');
@@ -157,7 +162,42 @@ export class MainController{
                             interaction.reply('No workey');
                             return;
                     }
-                }      
+                case 'noise':
+                    interaction.deferReply()
+                    let sounds = getCurrentSounds()
+                    let sound = options.getString('sound')!.toLowerCase();
+                    console.log('Sounds: ');
+                    console.log(sounds);
+                    console.log(`Sound: ${sound}`)
+                    console.log('Sound dir: ',  sounds[`${sound}.mp3`])
+                    if(Object.keys(sounds).indexOf(`${sound}.mp3`) != -1){
+                        if(this.AssetController.verifyEnoughBonkle(user.id, 10)){
+                            let t1: Transaction = createTransaction(user.id, 'Bonkle Buck Broker', 10);
+                            let t2: Transaction = createShopTransaction(user.id, {type: 'Sound', ammount: 1});
+                            this.BlockController.addTransactionToBlock(t1);
+                            this.BlockController.addTransactionToBlock(t2);
+                            let guild = Shopkeeper.guilds.cache.get(interaction.guildId || '')
+                            let member = guild?.members.cache.get(interaction.member?.user.id || '');
+                            let voiceChannel: VoiceChannel = member?.voice.channel as VoiceChannel;
+                            console.log('Voice Channel established')
+                            let connection = await connectToChannel(voiceChannel);
+                            connection.subscribe(this.Player);
+                            let resource = createAudioResource(sounds[`${sound}.mp3`])
+                            this.Player.play(resource);
+                            console.log('Playing resource');
+                            await entersState(this.Player, AudioPlayerStatus.Playing, 10e3);
+                            console.log('Should be playing')
+                            connection.setSpeaking(true);
+                            await entersState(this.Player, AudioPlayerStatus.Idle, 60e3);
+                            connection.setSpeaking(false);
+                            interaction.editReply('Sound played')
+                        }else{
+                            interaction.reply('Sound Not Purchased, Poor!');
+                        }
+                    }else{
+                        interaction.reply('Sound Not Found, Bad!');
+                    }
+                }    
         })
     }
 
@@ -381,6 +421,12 @@ export class MainController{
         await bandit;
         console.log('Shopkeeper Logged in successfully');
         
+        let player = createAudioPlayer(	{
+            behaviors: {
+                noSubscriber: NoSubscriberBehavior.Play,
+            }   
+        });
+
         console.log('Getting Network Blocks');
         let blocks = await this.fetchBlocksFromChannel(BLOCK_CHANNEL_ID);
         console.log(blocks.length);

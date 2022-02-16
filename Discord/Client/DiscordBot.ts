@@ -3,10 +3,10 @@ import { cpuUsage } from 'node:process';
 import { SEXY_BONKLES_GUILD_ID } from '../../env';
 import { ItemsForSale } from '../../models'
 
-export const CockChain = new Client({intents:[Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.DIRECT_MESSAGES, Intents.FLAGS.GUILD_INTEGRATIONS]})
-export const Banker = new Client({intents:[Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.DIRECT_MESSAGES, Intents.FLAGS.GUILD_INTEGRATIONS]})
-export const Shopkeeper = new Client({intents:[Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.DIRECT_MESSAGES, Intents.FLAGS.GUILD_INVITES, Intents.FLAGS.GUILD_INTEGRATIONS]})
-export const Bandit = new Client({intents:[Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.DIRECT_MESSAGES, Intents.FLAGS.GUILD_BANS, Intents.FLAGS.GUILD_INTEGRATIONS]})
+export const CockChain = new Client({intents:[Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.DIRECT_MESSAGES, Intents.FLAGS.GUILD_INTEGRATIONS, Intents.FLAGS.GUILD_VOICE_STATES]})
+export const Banker = new Client({intents:[Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.DIRECT_MESSAGES, Intents.FLAGS.GUILD_INTEGRATIONS, Intents.FLAGS.GUILD_VOICE_STATES]})
+export const Shopkeeper = new Client({intents:[Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.DIRECT_MESSAGES, Intents.FLAGS.GUILD_INVITES, Intents.FLAGS.GUILD_INTEGRATIONS, Intents.FLAGS.GUILD_VOICE_STATES]})
+export const Bandit = new Client({intents:[Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.DIRECT_MESSAGES, Intents.FLAGS.GUILD_BANS, Intents.FLAGS.GUILD_INTEGRATIONS, Intents.FLAGS.GUILD_VOICE_STATES]})
 
 CockChain.once('ready', ()=>{
     console.log('Chain Bot Online, Syncing up with network');
@@ -279,12 +279,12 @@ Shopkeeper.once('ready', () => {
     })
 
     commands?.create({
-        name: 'tokenbal',
-        description: 'Get your current balance for a specific token',
+        name: 'noise',
+        description: 'Play a noise in the channel',
         options: [
             {
-                name: 'token',
-                description: 'the token you want your bal to',
+                name: 'sound',
+                description: 'The sound you want to play',
                 required: true,
                 type: Constants.ApplicationCommandOptionTypes.STRING
             }

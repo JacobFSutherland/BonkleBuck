@@ -163,7 +163,9 @@ export class AssetController {
                 let contract = t.medium as TokenContract;
                 this.currentTokens[contract.name] = contract;
                 return false;
-        }
+            case 'Sound': 
+                return false;
+            }
     }
 
 
