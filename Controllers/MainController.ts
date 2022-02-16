@@ -196,11 +196,14 @@ export class MainController{
                             await interaction.editReply('Sound played')
                             connection.disconnect()
                             connection.destroy()
+                            return;
                         }else{
                             await interaction.reply('Sound Not Purchased, Poor!');
+                            return;
                         }
                     }else{
                         await interaction.reply('Sound Not Found, Bad!');
+                        return;
                     }
                 }    
         })
