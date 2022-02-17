@@ -206,11 +206,11 @@ export class MainController{
                             }
                             return;
                         }else{
-                            await interaction.reply('Sound Not Purchased, Poor!');
+                            await interaction.editReply('Sound Not Purchased, Poor!');
                             return;
                         }
                     }else{
-                        await interaction.reply('Sound Not Found, Bad!');
+                        await interaction.editReply('Sound Not Found, Bad!');
                         return;
                     }
                 }    
