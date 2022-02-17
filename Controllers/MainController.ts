@@ -163,12 +163,16 @@ export class MainController{
                             return;
                     }
                 case 'noise':
+                    console.log('Play noise')
                     await interaction.deferReply()
+                    console.log('Getting voice channel')
                     let voiceChannel: VoiceChannel | undefined = this.getVoiceChannel(interaction)
+                    console.log('Voice channel gotten, checking if undefined:')
                     if(voiceChannel == undefined){ 
                         await interaction.editReply('Join a channel, headass')
                         return;
                     }
+                    console.log('Voice channel not undefined')
                     let sounds = getCurrentSounds()
                     let sound = options.getString('sound')!.toLowerCase();
                     console.log('Sounds: ');
