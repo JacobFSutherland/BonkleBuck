@@ -164,7 +164,7 @@ export class MainController{
                     }
                 case 'noise':
                     console.log('Play noise')
-                    await interaction.deferReply()
+                    await interaction.reply('Working on it');
                     console.log('Getting voice channel')
                     let voiceChannel: VoiceChannel | undefined = this.getVoiceChannel(interaction)
                     console.log('Voice channel gotten, checking if undefined:')
