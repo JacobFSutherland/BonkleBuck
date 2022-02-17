@@ -1,5 +1,5 @@
 import * as fs from 'fs';
-import { joinVoiceChannel, entersState, VoiceConnectionStatus, DiscordGatewayAdapterCreator, VoiceConnection } from '@discordjs/voice';
+import { joinVoiceChannel, entersState, VoiceConnectionStatus, VoiceConnection } from '@discordjs/voice';
 import { Snowflake, VoiceChannel } from 'discord.js';
 
 const voiceConnections: Record<Snowflake, VoiceConnection> = {};
@@ -28,6 +28,7 @@ export async function connectToChannel(channel: VoiceChannel): Promise<VoiceConn
         console.log(connection)
 		await entersState(connection, VoiceConnectionStatus.Ready, 30e3);
         console.log('Returning Connection')
+        await entersState(connection, VoiceConnectionStatus.Disconnected, 5_000);
 		return connection;
 	} catch (error) {
         console.log('Error Creating Connection')
