@@ -187,6 +187,10 @@ export class MainController{
                             this.BlockController.addTransactionToBlock(t2);
                             console.log('Voice Channel established')
                             let connection = await connectToChannel(voiceChannel);
+                            if(!connection){
+                                await interaction.editReply('Error playing sound')
+                                return;
+                            } 
                             connection.subscribe(this.Player);
                             let resource = createAudioResource(sounds[`${sound}.mp3`])
                             this.Player.play(resource);

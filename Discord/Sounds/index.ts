@@ -15,7 +15,7 @@ export function getCurrentSounds(): {[id: string]: string}{
     return audio
 }
 
-export async function connectToChannel(channel: VoiceChannel): Promise<VoiceConnection>{
+export async function connectToChannel(channel: VoiceChannel): Promise<VoiceConnection | undefined>{
     console.log('Creating Connection')
 	const connection = joinVoiceChannel({
 		channelId: channel.id,
@@ -33,6 +33,6 @@ export async function connectToChannel(channel: VoiceChannel): Promise<VoiceConn
 	} catch (error) {
         console.log('Error Creating Connection')
 		connection.destroy();
-		throw error;
+		return undefined;
 	}
 }
