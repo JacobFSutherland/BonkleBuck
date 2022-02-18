@@ -28,7 +28,6 @@ export async function connectToChannel(channel: VoiceChannel): Promise<VoiceConn
         console.log(connection)
 		await entersState(connection, VoiceConnectionStatus.Ready, 30e3);
         console.log('Returning Connection')
-        await entersState(connection, VoiceConnectionStatus.Disconnected, 5_000);
 		return connection;
 	} catch (error) {
         console.log('Error Creating Connection')
