@@ -318,7 +318,7 @@ export class MainController{
                     quantity = options.getNumber('quantity')!;
                     cost = stockPrice * quantity - TRADING_COMMISSION;
                     if( this.AssetController.initStocks(user.id, ticker) >= quantity && quantity > 0 && stockPrice > 0 && Number.isInteger(quantity) && cost > 0){
-                        let T: Trade = this.AssetController.tradeStock(user.id, 'Bonkle Buck Broker', ticker, stockPrice, quantity);
+                        let T: Trade = this.AssetController.tradeStock('Bonkle Buck Broker', user.id, ticker, stockPrice, quantity);
                         this.BlockController.addTransactionToBlock(T.reciever);
                         this.BlockController.addTransactionToBlock(T.sender);
                         interaction.reply('Stocks sold successfully')
