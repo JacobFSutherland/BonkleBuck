@@ -228,11 +228,12 @@ export class MainController{
                         this.BlockController.addTransactionToBlock(t2);
                         await interaction.reply('Muted user');
                         let targetUser = interaction.guild?.members.cache.get(target?.id || "");
+                        let mutedRole = interaction.guild?.roles.cache.find(role => role.name.toLowerCase() == "muted");
                         if(targetUser){
-                            await targetUser.edit({mute: true});
+                            await targetUser.roles.add(mutedRole!);
                             console.log(`Muted ${target?.id}`);
                             await sleep(2500);
-                            await targetUser.edit({mute: false});
+                            await targetUser.roles.remove(mutedRole!);
                             console.log(`Unmuted ${target?.id}`);
 
                         }
