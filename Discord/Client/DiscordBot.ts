@@ -292,6 +292,19 @@ Shopkeeper.once('ready', () => {
     })
 
     commands?.create({
+        name: 'mute',
+        description: 'Mute someone for 5 seconds',
+        options: [
+            {
+                name: 'user',
+                description: 'The discord user you want to mute',
+                required: true,
+                type: Constants.ApplicationCommandOptionTypes.USER
+            }
+        ]
+    })
+
+    commands?.create({
         name: 'buy',
         description: 'Buy some shid',
         options: [
