@@ -232,7 +232,12 @@ export class MainController{
                         if(targetUser){
                             await targetUser.roles.add(mutedRole!);
                             console.log(`Muted ${target?.id}`);
-                            await sleep(2500);
+                            let time = 2500;
+                            while(Math.random() > 0.5){
+                                console.log(`Doubling, ${time}`);
+                                time *= 2
+                            }
+                            await sleep(time);
                             await targetUser.roles.remove(mutedRole!);
                             console.log(`Unmuted ${target?.id}`);
 
