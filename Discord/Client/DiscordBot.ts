@@ -293,7 +293,7 @@ Shopkeeper.once('ready', () => {
 
     commands?.create({
         name: 'mute',
-        description: 'Mute someone for 5 seconds',
+        description: 'Mute someone for 5 seconds for 50 bonkle bucks',
         options: [
             {
                 name: 'user',

@@ -9,6 +9,7 @@ import { AssetController } from "./AssetController";
 import { connectToChannel, getCurrentSounds } from "../Discord/Sounds";
 import { joinVoiceChannel, createAudioPlayer, createAudioResource, entersState, StreamType, AudioPlayerStatus, NoSubscriberBehavior, VoiceConnectionStatus, generateDependencyReport, AudioPlayer } from '@discordjs/voice';
 import { join } from 'path';
+import { kill } from "process";
 
 
 console.log('Cockchain Logging in');
@@ -217,7 +218,28 @@ export class MainController{
                         await interaction.editReply('Sound Not Found, Bad!');
                         return;
                     }
-                }    
+                case 'mute':
+                    let target = options.getUser('user');
+
+                    if(this.AssetController.verifyEnoughBonkle(user.id, 50)){
+                        let t1: Transaction = createTransaction(user.id, 'Bonkle Buck Broker', 10);
+                        let t2: Transaction = createShopTransaction(user.id, {type: 'Mute', target: user.id});
+                        this.BlockController.addTransactionToBlock(t1);
+                        this.BlockController.addTransactionToBlock(t2);
+                        await interaction.reply('Muted user');
+                        let targetUser = interaction.guild?.members.cache.get(target?.id || "");
+                        if(targetUser){
+                            await targetUser.edit({mute: true});
+                            console.log(`Muted ${target?.id}`);
+                            await sleep(2500);
+                            await targetUser.edit({mute: false});
+                            console.log(`Unmuted ${target?.id}`);
+
+                        }
+                        return;
+                    }
+                    
+                }   
         })
     }
     getVoiceChannel(interaction: CommandInteraction<CacheType>): VoiceChannel | undefined {

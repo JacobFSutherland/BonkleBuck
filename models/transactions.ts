@@ -59,7 +59,6 @@ export interface DiscordInvite {
 export interface Mute {
     type: 'Mute'
     target: string
-    sex: number
 }
 
 export interface Trade {
