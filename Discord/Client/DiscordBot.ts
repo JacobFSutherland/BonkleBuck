@@ -316,7 +316,7 @@ Shopkeeper.once('ready', () => {
                 name: 'nickname',
                 description: 'The discord user you want to change their nickname',
                 required: true,
-                type: Constants.ApplicationCommandOptionTypes.USER
+                type: Constants.ApplicationCommandOptionTypes.STRING
             }
         ]
     })
