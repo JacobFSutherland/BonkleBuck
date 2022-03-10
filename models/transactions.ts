@@ -2,7 +2,7 @@ import { TokenContract } from ".";
 
 export interface Transaction {
     reciever: string
-    medium: BonkleBuck | Stock | Option | NFT | Mute | DiscordInvite | Token | TokenContract | Sound
+    medium: BonkleBuck | Stock | Option | NFT | Mute | DiscordInvite | Token | TokenContract | Sound | ChangeNickname
     sender: string
 };
 
@@ -61,6 +61,11 @@ export interface Mute {
     target: string
 }
 
+export interface ChangeNickname {
+    type: 'ChangeNickname'
+    target: string
+}
+
 export interface Trade {
     sender: Transaction,
     reciever: Transaction,
@@ -77,7 +82,7 @@ export function createTransaction(sender: string, reciever: string, ammount: num
     return t;   
 }
 
-export function createShopTransaction(reciever: string, medium: BonkleBuck | Stock | Option | NFT | Mute | DiscordInvite | Sound){
+export function createShopTransaction(reciever: string, medium: BonkleBuck | Stock | Option | NFT | Mute | DiscordInvite | Sound | ChangeNickname){
     let t: Transaction = {
         sender: 'Bonkle Buck Broker', reciever, medium
     }

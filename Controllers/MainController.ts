@@ -222,7 +222,7 @@ export class MainController{
                     let target = options.getUser('user');
 
                     if(this.AssetController.verifyEnoughBonkle(user.id, 50)){
-                        let t1: Transaction = createTransaction(user.id, 'Bonkle Buck Broker', 10);
+                        let t1: Transaction = createTransaction(user.id, 'Bonkle Buck Broker', 50);
                         let t2: Transaction = createShopTransaction(user.id, {type: 'Mute', target: user.id});
                         this.BlockController.addTransactionToBlock(t1);
                         this.BlockController.addTransactionToBlock(t2);
@@ -244,8 +244,28 @@ export class MainController{
                         }
                         return;
                     }
-                    
-                }   
+                    await interaction.reply('User not muted, no buck');
+
+                case 'nick':
+                    if(this.AssetController.verifyEnoughBonkle(user.id, 10)){
+                        await interaction.reply('username changed');
+                        let t1: Transaction = createTransaction(user.id, 'Bonkle Buck Broker', 10);
+                        let t2: Transaction = createShopTransaction(user.id, {type: 'ChangeNickname', target: user.id});
+                        this.BlockController.addTransactionToBlock(t1);
+                        this.BlockController.addTransactionToBlock(t2);
+                        let changeNickname = options.getUser('user');
+                        let nickname = options.getString('nickname');
+                        let userRef = interaction.guild?.members.cache.get(changeNickname?.id || "");
+                        if(userRef){
+                            await userRef.setNickname(nickname);
+                        }
+                    }
+                    await interaction.reply('Nickname not changed, no buck');
+
+                  
+                
+                } 
+
         })
     }
     getVoiceChannel(interaction: CommandInteraction<CacheType>): VoiceChannel | undefined {
