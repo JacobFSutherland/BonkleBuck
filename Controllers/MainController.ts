@@ -246,7 +246,7 @@ export class MainController{
                     }
                     await interaction.reply('User not muted, no buck');
 
-                case 'nick':
+                case 'changenick':
                     let changeNickname = options.getUser('user');
                     let nickname = options.getString('nickname');
                     if(this.AssetController.verifyEnoughBonkle(user.id, 10)){
