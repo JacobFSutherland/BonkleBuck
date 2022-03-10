@@ -165,7 +165,9 @@ export class AssetController {
                 return false;
             case 'Sound': 
                 return false;
-            }
+            case 'ChangeNickname':
+                return false;
+        }
     }
 
 
