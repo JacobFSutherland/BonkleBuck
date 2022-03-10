@@ -138,13 +138,14 @@ export class MainController{
             if(!interaction.isCommand()) return;
             const { commandName, options, user } = interaction;
             console.log('Shop Request made');
+            await interaction.reply('Working on it');
             switch(commandName){
                 case 'bal': 
-                    interaction.reply(`You have ${this.AssetController.getBonkleBalance(user.id)} Bonkle Bucks`);
+                    interaction.editReply(`You have ${this.AssetController.getBonkleBalance(user.id)} Bonkle Bucks`);
                     return;
                 case 'tokenbal':
                     let token = options.getString('token')!;
-                    interaction.reply(`You have ${this.AssetController.getTokenBalance(token, user.id)} ${token}/s`);
+                    interaction.editReply(`You have ${this.AssetController.getTokenBalance(token, user.id)} ${token}/s`);
                     return;
                 case 'buy':
                     switch(options.getString('item')!.toLowerCase()){
@@ -154,18 +155,17 @@ export class MainController{
                                 let t2: Transaction = createShopTransaction(user.id, {type: 'DiscordInvite', ammount: 1});
                                 this.BlockController.addTransactionToBlock(t1);
                                 this.BlockController.addTransactionToBlock(t2);
-                                interaction.reply('Invite Purchased, You will recieve your invite on the next block');
+                                interaction.editReply('Invite Purchased, You will recieve your invite on the next block');
                             }else{
-                                interaction.reply('Invite Not Purchased, Poor!');
+                                interaction.editReply('Invite Not Purchased, Poor!');
                             }
                             return;
                         default:
-                            interaction.reply('No workey');
+                            interaction.editReply('No workey');
                             return;
                     }
                 case 'noise':
                     console.log('Play noise')
-                    await interaction.reply('Working on it');
                     console.log('Getting voice channel')
                     let voiceChannel: VoiceChannel | undefined = this.getVoiceChannel(interaction)
                     console.log('Voice channel gotten, checking if undefined:')
@@ -226,7 +226,7 @@ export class MainController{
                         let t2: Transaction = createShopTransaction(user.id, {type: 'Mute', target: user.id});
                         this.BlockController.addTransactionToBlock(t1);
                         this.BlockController.addTransactionToBlock(t2);
-                        await interaction.reply('Muted user');
+                        await interaction.editReply('Muted user');
                         let targetUser = interaction.guild?.members.cache.get(target?.id || "");
                         let mutedRole = interaction.guild?.roles.cache.find(role => role.name.toLowerCase() == "muted");
                         if(targetUser){
@@ -244,13 +244,13 @@ export class MainController{
                         }
                         return;
                     }
-                    await interaction.reply('User not muted, no buck');
+                    await interaction.editReply('User not muted, no buck');
 
                 case 'changenick':
                     let changeNickname = options.getUser('user');
                     let nickname = options.getString('nickname');
                     if(this.AssetController.verifyEnoughBonkle(user.id, 10)){
-                        await interaction.reply('username changed');
+                        await interaction.editReply('username changed');
                         let t1: Transaction = createTransaction(user.id, 'Bonkle Buck Broker', 10);
                         let t2: Transaction = createShopTransaction(user.id, {type: 'ChangeNickname', target: user.id});
                         this.BlockController.addTransactionToBlock(t1);
@@ -260,7 +260,7 @@ export class MainController{
                             await userRef.setNickname(nickname);
                         }
                     }
-                    await interaction.reply('Nickname not changed, no buck');
+                    await interaction.editReply('Nickname not changed, no buck');
 
                   
                 
@@ -297,6 +297,7 @@ export class MainController{
             let reciever: User;
             let strikes: number;
             let embeds: MessageEmbed[]
+            
             switch(commandName){
                 case 'sendbonkle': 
                     console.log(`user id: ${user.id}`)
