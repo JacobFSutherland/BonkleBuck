@@ -259,6 +259,7 @@ export class MainController{
                         if(userRef){
                             await userRef.setNickname(nickname);
                         }
+                        return;
                     }
                     await interaction.editReply('Nickname not changed, no buck');
 
