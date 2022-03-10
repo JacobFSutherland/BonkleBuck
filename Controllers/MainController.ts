@@ -247,14 +247,14 @@ export class MainController{
                     await interaction.reply('User not muted, no buck');
 
                 case 'nick':
+                    let changeNickname = options.getUser('user');
+                    let nickname = options.getString('nickname');
                     if(this.AssetController.verifyEnoughBonkle(user.id, 10)){
                         await interaction.reply('username changed');
                         let t1: Transaction = createTransaction(user.id, 'Bonkle Buck Broker', 10);
                         let t2: Transaction = createShopTransaction(user.id, {type: 'ChangeNickname', target: user.id});
                         this.BlockController.addTransactionToBlock(t1);
                         this.BlockController.addTransactionToBlock(t2);
-                        let changeNickname = options.getUser('user');
-                        let nickname = options.getString('nickname');
                         let userRef = interaction.guild?.members.cache.get(changeNickname?.id || "");
                         if(userRef){
                             await userRef.setNickname(nickname);

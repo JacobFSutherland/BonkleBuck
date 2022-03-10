@@ -301,6 +301,25 @@ Shopkeeper.once('ready', () => {
             }
         ]
     })
+    
+    commands?.create({
+        name: 'changenick',
+        description: 'change someone\'s nickname for 10 bonkle bucks',
+        options: [
+            {
+                name: 'user',
+                description: 'The discord user you want to change their nickname',
+                required: true,
+                type: Constants.ApplicationCommandOptionTypes.USER
+            },
+            {
+                name: 'nickname',
+                description: 'The discord user you want to change their nickname',
+                required: true,
+                type: Constants.ApplicationCommandOptionTypes.USER
+            }
+        ]
+    })
 
     commands?.create({
         name: 'buy',
