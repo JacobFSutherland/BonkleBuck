@@ -251,7 +251,7 @@ export class MainController{
                     let nickname = options.getString('nickname');
                     if(changeNickname?.bot){
                         await interaction.editReply('You cannot change bot name, fucco');
-                        return;
+                        return
                     } 
                     if(this.AssetController.verifyEnoughBonkle(user.id, 10)){
                         await interaction.editReply('username changed');
@@ -323,13 +323,15 @@ export class MainController{
                     optionPrice = optionChain[optionType][strike].ask;
                     quantity = options.getNumber('option_quantity')!;
                     optionCost = quantity * optionPrice * 100 + TRADING_COMMISSION;
+                    console.log('Price: ', optionCost)
                     if(this.AssetController.verifyEnoughBonkle(user.id, optionCost) && quantity > 0 && Number.isInteger(quantity) ){
                         let T: Trade = this.AssetController.tradeOption(user.id, 'Bonkle Buck Broker', ticker, optionType, strike, options.getNumber('option_quantity')!, optionCost);
                         this.BlockController.addTransactionToBlock(T.reciever);
                         this.BlockController.addTransactionToBlock(T.sender);
-                        interaction.reply('Options not bought successfully')
+                        interaction.reply('Options bought successfully')
                         return;
                     }
+                    interaction.reply('Options not bought successfully')
                     return;
 
                 case 'selloption': 
