@@ -249,6 +249,10 @@ export class MainController{
                 case 'changenick':
                     let changeNickname = options.getUser('user');
                     let nickname = options.getString('nickname');
+                    if(changeNickname?.bot){
+                        await interaction.editReply('You cannot change bot name, fucco');
+                        return;
+                    } 
                     if(this.AssetController.verifyEnoughBonkle(user.id, 10)){
                         await interaction.editReply('username changed');
                         let t1: Transaction = createTransaction(user.id, 'Bonkle Buck Broker', 10);
